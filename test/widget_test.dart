@@ -4,12 +4,15 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:abu_zaria_cbt/main.dart';
+import 'package:abu_zaria_cbt/modules/auth/demo_auth.dart';
+import 'package:abu_zaria_cbt/app/routes/app_routes.dart';
 import 'package:abu_zaria_cbt/modules/demo/demo_store.dart';
 
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
-    DemoStore.instance.role = 'Administrator';
+    DemoAuth.instance.account = null;
+    DemoAuth.instance.student = null;
   });
   tearDown(() => Get.reset());
   Future<void> boot(WidgetTester tester, Size size) async {
@@ -17,7 +20,14 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    await DemoAuth.instance.signIn(
+      'Administrator',
+      'admin.abu',
+      'AbuAdmin123!',
+    );
     await tester.pumpWidget(const CenterExamApp());
+    await tester.pumpAndSettle();
+    Get.offAllNamed(Routes.demo);
     await tester.pumpAndSettle();
   }
 
@@ -53,9 +63,20 @@ void main() {
       await tester.tap(find.text('Publish demo results'));
       await tester.pumpAndSettle();
     }
-    await tester.tap(find.byTooltip('Switch demo role'));
+    await tester.tap(find.byTooltip('Sign out'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Student').last);
+    await tester.enterText(find.byType(TextFormField).at(0), 'ABU/CSC/001');
+    await tester.ensureVisible(find.text('Next'));
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(DemoAuth.instance.account, isNull);
+    await tester.ensureVisible(find.text('Simulate fingerprint scan'));
+    await tester.tap(find.text('Simulate fingerprint scan'));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continue to exams'));
+    await tester.tap(find.text('Continue to exams'));
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     expect(find.text('Practice examination'), findsOneWidget);
     await tester.tap(find.byTooltip('Open navigation'));

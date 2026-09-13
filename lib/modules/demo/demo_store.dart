@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../auth/demo_auth.dart';
 
 class DemoExam {
   DemoExam(
@@ -44,7 +45,7 @@ class DemoIncident {
 /// Shared, deliberately in-memory state for the presentation demo.
 class DemoStore extends ChangeNotifier {
   static final instance = DemoStore();
-  String role = 'Administrator';
+  String get role => DemoAuth.instance.account?.role ?? 'Student';
   String semester = 'First semester';
   bool shuffle = true, showResults = false, notifications = true;
   final exams = <DemoExam>[

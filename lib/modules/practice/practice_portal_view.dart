@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../app/routes/app_routes.dart';
 import '../../data/models/center_exam_models.dart';
-import '../../data/services/center_exam_service.dart';
+import '../auth/demo_auth.dart';
 import '../demo/abu_demo_theme.dart';
 import '../demo/demo_store.dart';
 import '../portal/controller/center_exam_portal_controller.dart';
@@ -22,10 +22,7 @@ class _PracticePortalViewState extends State<PracticePortalView> {
     super.initState();
     portal = Get.find<CenterExamPortalController>();
     if (portal.candidate.value == null) {
-      portal.loadCandidateSession(
-        CenterExamService.restoreCandidateSession('ABU/CSC/001')!,
-        persist: false,
-      );
+      portal.loadCandidateSession(DemoAuth.instance.student!, persist: false);
     }
   }
 
@@ -50,10 +47,10 @@ class _PracticePortalViewState extends State<PracticePortalView> {
   @override
   Widget build(BuildContext context) => PracticeScaffold(
     onBack: () => Get.offAllNamed(Routes.demo),
-    trailing: const CircleAvatar(
+    trailing: CircleAvatar(
       backgroundColor: Color(0xFFE6EEE8),
       child: Text(
-        'ZM',
+        DemoAuth.instance.account!.initials,
         style: TextStyle(
           color: abuGreen,
           fontSize: 12,
@@ -91,7 +88,7 @@ class _PracticePortalViewState extends State<PracticePortalView> {
           const SizedBox(height: 12),
           PracticeTitle(
             'Your next exam starts with preparation.',
-            'Welcome back, ${candidate?.fullName.split(' ').first ?? 'Zainab'}. Make yourself familiar with the examination experience.',
+            'Welcome back, ${candidate?.fullName.split(' ').first ?? 'student'}. Make yourself familiar with the examination experience.',
           ),
           const SizedBox(height: 28),
           practiceColumns(
@@ -315,7 +312,7 @@ class _PracticePortalViewState extends State<PracticePortalView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  candidate?.fullName ?? 'Zainab Musa',
+                                  candidate?.fullName ?? 'Student',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -323,7 +320,7 @@ class _PracticePortalViewState extends State<PracticePortalView> {
                                 const SizedBox(height: 4),
                                 Text(
                                   candidate?.registrationNumber ??
-                                      'ABU/CSC/001',
+                                      'Not available',
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: abuMuted,

@@ -1,3 +1,5 @@
+import 'package:abu_zaria_cbt/modules/auth/fingerprint_reader.dart';
+import 'package:abu_zaria_cbt/modules/auth/demo_auth.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -31,6 +33,14 @@ void main() {
       icons.addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
       await icons.load();
     });
+    await tester.runAsync(
+      () => Future.value(
+        DemoAuth.instance.completeStudentFingerprint(
+          'ABU/CSC/001',
+          FingerprintResult.matched,
+        ),
+      ),
+    );
     tester.view.physicalSize = const Size(1440, 1000);
     tester.view.devicePixelRatio = 1;
     final key = GlobalKey();

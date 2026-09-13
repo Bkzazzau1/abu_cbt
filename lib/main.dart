@@ -21,7 +21,7 @@ class CenterExamApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'ABU Zaria CBT Center',
       debugShowCheckedModeBanner: false,
-      initialRoute: Routes.demo,
+      initialRoute: Routes.centerLogin,
       getPages: AppPages.routes,
       theme: KsTheme.darkAcademic,
     );

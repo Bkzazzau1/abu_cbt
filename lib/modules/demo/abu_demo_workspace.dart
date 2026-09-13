@@ -4,10 +4,10 @@ import 'package:get/get.dart';
 
 import '../../app/routes/app_routes.dart';
 
-import '../../data/services/center_exam_service.dart';
 import '../portal/controller/center_exam_portal_controller.dart';
 import 'abu_demo_theme.dart';
 import 'demo_store.dart';
+import '../auth/demo_auth.dart';
 
 class AbuDemoWorkspace extends StatefulWidget {
   const AbuDemoWorkspace({super.key});
@@ -268,12 +268,12 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
                 Icon(Icons.science_outlined, color: abuGreen),
                 SizedBox(height: 10),
                 Text(
-                  'Explore the experience',
+                  'Your account workspace',
                   style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
                 ),
                 SizedBox(height: 6),
                 Text(
-                  'Switch roles to preview the student and invigilator journeys.',
+                  'Each account has its own workspace. Sign out to use a different demo account.',
                   style: TextStyle(color: abuMuted, fontSize: 12, height: 1.5),
                 ),
               ],
@@ -320,51 +320,27 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
         ],
         const Spacer(),
         if (wide) ...[badge('DEMO'), const SizedBox(width: 20)],
-        PopupMenuButton<String>(
-          tooltip: 'Switch demo role',
-          initialValue: store.role,
-          onSelected: (role) {
-            store.role = role;
-            go(role == 'Student' ? 'My examinations' : 'Overview');
-          },
-          itemBuilder: (_) => [
-            'Administrator',
-            'Invigilator',
-            'Student',
-          ].map((r) => PopupMenuItem(value: r, child: Text(r))).toList(),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 17,
-                backgroundColor: const Color(0xFFF0EAD9),
-                child: Text(
-                  store.role == 'Student' ? 'ZM' : 'AU',
-                  style: const TextStyle(
-                    color: abuGreen,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                store.role,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Icon(Icons.expand_more, size: 18),
-            ],
+        SizedBox(
+          width: wide ? 160 : 110,
+          child: Text(
+            DemoAuth.instance.account?.name ?? '',
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ),
-        const SizedBox(width: 12),
         IconButton(
-          tooltip: 'Recent activity',
-          onPressed: () =>
-              details('Recent activity', store.activity.join('\n\n')),
-          icon: const Icon(Icons.notifications_none, size: 22),
+          tooltip: 'Sign out',
+          onPressed: DemoAuth.instance.signOut,
+          icon: const Icon(Icons.logout, size: 20),
         ),
+        const SizedBox(width: 12),
+        if (store.role != 'Student')
+          IconButton(
+            tooltip: 'Recent activity',
+            onPressed: () =>
+                details('Recent activity', store.activity.join('\n\n')),
+            icon: const Icon(Icons.notifications_none, size: 22),
+          ),
       ],
     ),
   );
@@ -383,7 +359,7 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
       'Results': 'Review assessment outcomes and control result publication.',
       'Incidents': 'Record, track and resolve issues during examinations.',
       'Settings': 'Personalise the centre’s demo examination preferences.',
-      'My examinations': 'Welcome, Zainab. Here is your examination schedule.',
+      'My examinations': 'Your examination schedule and practice sessions.',
       'My results': 'Your published examination results, in one place.',
       'Help & guidance':
           'Everything you need for a smooth examination experience.',
@@ -425,7 +401,7 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Add question'),
           ),
-        if (page == 'Candidates')
+        if (page == 'Candidates' && store.role == 'Administrator')
           FilledButton.icon(
             onPressed: candidateForm,
             icon: const Icon(Icons.person_add_alt, size: 18),
@@ -1583,7 +1559,12 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
         child: table(
           ['Candidate', 'Course', 'Score', 'Grade', 'Status'],
           (page == 'My results'
-                  ? store.candidates.take(1)
+                  ? store.candidates
+                        .take(4)
+                        .where(
+                          (c) =>
+                              c.number == DemoAuth.instance.account?.username,
+                        )
                   : store.candidates.take(4))
               .toList()
               .asMap()
@@ -1592,8 +1573,12 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
                 (entry) => [
                   cell(entry.value.name, entry.value.number),
                   cell('COS 301'),
-                  cell('${[82, 74, 68, 91][entry.key]} / 100'),
-                  cell(['A', 'A', 'B', 'A'][entry.key]),
+                  cell(
+                    '${[82, 74, 68, 91][store.candidates.indexOf(entry.value)]} / 100',
+                  ),
+                  cell(
+                    ['A', 'A', 'B', 'A'][store.candidates.indexOf(entry.value)],
+                  ),
                   badge(
                     store.showResults ? 'Published' : 'Reviewed',
                     warning: !store.showResults,
@@ -1720,7 +1705,7 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Publish demo results'),
               subtitle: const Text(
-                'Make sample scores visible in the student role.',
+                'Make sample scores visible in the student account.',
               ),
               value: store.showResults,
               onChanged: (v) => change(
@@ -1734,109 +1719,80 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
     ),
   ];
 
-  List<Widget> student() => [
-    Container(
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: abuGreen,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: const Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: Color(0xFFDCE9D5),
-            child: Text(
-              'ZM',
-              style: TextStyle(color: abuGreen, fontWeight: FontWeight.bold),
-            ),
+  List<Widget> student() {
+    final candidate = DemoAuth.instance.student!.candidate;
+    final exams = DemoAuth.instance.student!.exams;
+    return [
+      panel(
+        title: candidate.fullName,
+        subtitle: candidate.registrationNumber,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
+          child: Text(
+            '${candidate.department} ? ${candidate.level} ? ${candidate.programme}',
+            style: const TextStyle(color: abuMuted),
           ),
-          SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Zainab Musa',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'ABU/CSC/001 · Computer Science\n300 Level · Seat A01',
-                  style: TextStyle(
-                    color: Color(0xFFD3E2D7),
-                    fontSize: 12,
-                    height: 1.8,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-    const SizedBox(height: 24),
-    panel(
-      title: 'Practice examination',
-      subtitle:
-          'Explore the complete candidate journey using sample questions.',
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            badge('Ready to begin'),
-            const SizedBox(height: 18),
-            const Text(
-              'Your exam experience starts here',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Read the instructions, confirm your identity, answer questions and review your submission. This practice does not affect the sample results.',
-              style: TextStyle(color: abuMuted, height: 1.7),
-            ),
-            const SizedBox(height: 22),
-            FilledButton.icon(
-              onPressed: openPractice,
-              icon: const Icon(Icons.arrow_forward, size: 18),
-              label: const Text('Open practice examination'),
-            ),
-          ],
         ),
       ),
-    ),
-    const SizedBox(height: 24),
-    panel(
-      title: 'My timetable',
-      subtitle: 'Published demo examinations',
-      child: table(
-        ['Examination', 'Time', 'Venue', 'Status'],
-        store.exams
-            .where((e) => e.status != 'Draft')
-            .map(
-              (e) => [
-                cell(e.title, e.code),
-                cell(e.time),
-                cell(e.hall),
-                badge(e.status),
-              ],
-            )
-            .toList(),
+      const SizedBox(height: 24),
+      panel(
+        title: 'Practice examination',
+        subtitle: 'Prepare with your own course schedule.',
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 0, 22, 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your practice centre',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Read the instructions, confirm your identity and practise answering questions.',
+                style: TextStyle(color: abuMuted),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: openPractice,
+                icon: const Icon(Icons.arrow_forward, size: 18),
+                label: const Text('Open practice examination'),
+              ),
+            ],
+          ),
+        ),
       ),
-    ),
-  ];
+      const SizedBox(height: 24),
+      panel(
+        title: 'My timetable',
+        subtitle: 'Examinations assigned to your demo account',
+        child: table(
+          ['Examination', 'Time', 'Venue'],
+          exams
+              .map(
+                (e) => [
+                  cell(e.courseTitle, e.courseCode),
+                  cell(e.startTime),
+                  cell(e.venue),
+                ],
+              )
+              .toList(),
+        ),
+      ),
+    ];
+  }
 
   Future<void> openPractice() async {
-    final result = CenterExamService.restoreCandidateSession('ABU/CSC/001')!;
+    if (DemoAuth.instance.student == null) return;
     final controller = Get.isRegistered<CenterExamPortalController>()
         ? Get.find<CenterExamPortalController>()
         : Get.put(CenterExamPortalController(), permanent: true);
-    await controller.loadCandidateSession(result, persist: false);
+    if (controller.candidate.value == null) {
+      await controller.loadCandidateSession(
+        DemoAuth.instance.student!,
+        persist: false,
+      );
+    }
     Get.toNamed(Routes.centerPortal);
   }
 
@@ -1848,7 +1804,7 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
           for (final item in [
             (
               'Administrator walkthrough',
-              'Create an examination draft, publish its schedule and start a session. Add questions and approve them in the question bank. Publish sample results to see them in the student role.',
+              'Create an examination draft, publish its schedule and start a session. Add questions and approve them in the question bank. Publish sample results to see them in the student account.',
             ),
             (
               'Invigilator walkthrough',
@@ -1856,7 +1812,7 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
             ),
             (
               'Student walkthrough',
-              'Choose Student from the role menu. Open the practice examination, read the instructions and confirm your identity. Use the question navigator to review answers before submitting.',
+              'Sign in with your student registration number. Open the practice examination, read the instructions and confirm your identity. Use the question navigator to review answers before submitting.',
             ),
             (
               'About the demo data',

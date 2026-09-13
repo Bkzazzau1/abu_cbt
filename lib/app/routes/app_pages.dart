@@ -2,7 +2,8 @@ import 'package:get/get.dart';
 import '../../modules/demo/abu_demo_workspace.dart';
 
 import '../../modules/auth/controller/center_login_controller.dart';
-import '../../modules/auth/view/center_login_view.dart';
+import '../../modules/auth/view/role_login_view.dart';
+import '../../modules/auth/demo_auth.dart';
 import '../../modules/exam/controller/center_exam_run_controller.dart';
 import '../../modules/practice/practice_preflight_view.dart';
 import '../../modules/practice/practice_portal_view.dart';
@@ -25,7 +26,7 @@ import '../../modules/invigilator/view/exam_session_dashboard_view.dart';
 import '../../modules/invigilator/view/hall_monitoring_view.dart';
 import '../../modules/invigilator/view/incident_report_view.dart';
 import '../../modules/invigilator/view/invigilator_dashboard_view.dart';
-import '../../modules/invigilator/view/invigilator_login_view.dart';
+
 import '../../modules/invigilator/view/malpractice_report_view.dart';
 import '../../modules/invigilator/view/seat_map_view.dart';
 import '../../modules/portal/controller/center_exam_portal_controller.dart';
@@ -40,8 +41,13 @@ import 'app_routes.dart';
 
 class AppPages {
   static final routes = <GetPage>[
-    GetPage(name: Routes.demo, page: () => const AbuDemoWorkspace()),
     GetPage(
+      middlewares: [DemoRouteGuard()],
+      name: Routes.demo,
+      page: () => const AbuDemoWorkspace(),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.workstationGate,
       page: () => const WorkstationGateView(),
       binding: BindingsBuilder(() {
@@ -51,6 +57,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.deviceRegistration,
       page: () => const DeviceRegistrationView(),
       binding: BindingsBuilder(() {
@@ -60,6 +67,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.deviceBlocked,
       page: () => const DeviceBlockedView(),
       binding: BindingsBuilder(() {
@@ -67,13 +75,15 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerLogin,
-      page: () => const CenterLoginView(),
+      page: () => const RoleLoginView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<CenterLoginController>(() => CenterLoginController());
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerPortal,
       page: () => const PracticePortalView(),
       binding: BindingsBuilder(() {
@@ -83,14 +93,17 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerExamInstruction,
       page: () => const PracticePreflightView(),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerExamConfirmation,
       page: () => const PracticePreflightView(confirmation: true),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerExamRun,
       page: () => const PracticeRunView(),
       binding: BindingsBuilder(() {
@@ -98,12 +111,14 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerExamSubmit,
       page: () => const PracticeSummaryView(),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.invigilatorLogin,
-      page: () => const InvigilatorLoginView(),
+      page: () => const RoleLoginView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<InvigilatorLoginController>(
           () => InvigilatorLoginController(),
@@ -111,6 +126,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.invigilatorDashboard,
       page: () => const InvigilatorDashboardView(),
       binding: BindingsBuilder(() {
@@ -120,6 +136,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.candidateCheckIn,
       page: () => const CandidateCheckInView(),
       binding: BindingsBuilder(() {
@@ -129,6 +146,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.incidentReport,
       page: () => const IncidentReportView(),
       binding: BindingsBuilder(() {
@@ -136,6 +154,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.malpracticeReport,
       page: () => const MalpracticeReportView(),
       binding: BindingsBuilder(() {
@@ -145,6 +164,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.hallMonitoring,
       page: () => const HallMonitoringView(),
       binding: BindingsBuilder(() {
@@ -152,6 +172,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.candidateActionPanel,
       page: () => const CandidateActionPanelView(),
       binding: BindingsBuilder(() {
@@ -161,6 +182,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.attendanceRegister,
       page: () => const AttendanceRegisterView(),
       binding: BindingsBuilder(() {
@@ -170,6 +192,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.seatMap,
       page: () => const SeatMapView(),
       binding: BindingsBuilder(() {
@@ -177,6 +200,7 @@ class AppPages {
       }),
     ),
     GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.examSessionDashboard,
       page: () => const ExamSessionDashboardView(),
       binding: BindingsBuilder(() {

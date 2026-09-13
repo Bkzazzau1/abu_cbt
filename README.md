@@ -2,9 +2,10 @@
 
 ## Interactive UI demo
 
-Run `flutter run -d chrome` or `flutter run -d windows`. The app opens the ABU
-workspace. Switch between Administrator, Invigilator and Student using the role
-menu at the top right.
+Run `flutter run -d chrome` or `flutter run -d windows`. The app opens the sign-in
+screen. Students enter their registration number, click Next and complete the
+fingerprint demo. Invigilators and administrators use username/password sign-in. See [Demo login accounts](docs/demo-accounts.md) for all accounts.
+Sign out before switching accounts.
 
 - Administrator: create exam drafts, publish/start/end sessions, add and approve
   single-choice questions, register candidates and publish illustrative results.

@@ -1,3 +1,5 @@
+import 'package:abu_zaria_cbt/modules/auth/fingerprint_reader.dart';
+import 'package:abu_zaria_cbt/modules/auth/demo_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -12,6 +14,14 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
   tearDown(() => Get.reset());
   Future<void> boot(WidgetTester tester, Size size) async {
+    await tester.runAsync(
+      () => Future.value(
+        DemoAuth.instance.completeStudentFingerprint(
+          'ABU/CSC/001',
+          FingerprintResult.matched,
+        ),
+      ),
+    );
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
