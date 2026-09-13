@@ -1,6 +1,6 @@
 # Workstation Heartbeat Service (Rust + Axum)
 
-Real-time workstation usage broadcast service for K-SLAS CBT.
+Real-time workstation usage broadcast service for ABU Zaria CBT.
 
 This service is part of the Rust proctoring lane. It handles secure workstation
 presence telemetry, not live camera or media streaming.
@@ -29,7 +29,7 @@ HEARTBEAT_BIND_ADDR=0.0.0.0:8088 cargo run
 
 - `GET /` -> health (`ok`)
 - `GET /ws/workstation` -> workstation clients publish heartbeat events
-- `GET /ws/invigilator?centerName=KASU` -> invigilator clients receive snapshot + live updates
+- `GET /ws/invigilator?centerName=ABU` -> invigilator clients receive snapshot + live updates
 
 ## Workstation Message
 
@@ -37,11 +37,11 @@ HEARTBEAT_BIND_ADDR=0.0.0.0:8088 cargo run
 {
   "kind": "heartbeat",
   "payload": {
-    "workstationId": "KASU-CBT-A12F-93KD-7M21",
-    "centerName": "KASU",
+    "workstationId": "ABU-CBT-A12F-93KD-7M21",
+    "centerName": "ABU",
     "hallName": "Hall A",
     "seatNumber": "A-01",
-    "registrationNumber": "KASU/CSC/001",
+    "registrationNumber": "ABU/CSC/001",
     "candidateName": "Zainab Musa",
     "examTitle": "CSC 305 - Data Structures",
     "usageState": "submitted",

@@ -1,6 +1,6 @@
 # ks_sentinel
 
-Rust security runtime for K-SLAS CBT workstations.
+Rust security runtime for ABU Zaria CBT workstations.
 
 This crate is designed to be called from Flutter through Flutter Rust Bridge (FRB) in a background isolate/thread.
 

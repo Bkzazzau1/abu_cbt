@@ -166,7 +166,7 @@ class InvigilatorDashboardController extends GetxController {
     _connectionSub = _presenceService.isConnected.listen(
       (value) => liveFeedConnected.value = value,
     );
-    await _presenceService.connectInvigilator(centerName: 'KASU');
+    await _presenceService.connectInvigilator(centerName: 'ABU');
   }
 
   void _applyPresenceEnvelope(WorkstationPresenceEnvelope envelope) {
@@ -227,7 +227,7 @@ class InvigilatorDashboardController extends GetxController {
     records.add(
       InvigilatorWorkstationRecord(
         workstationId: update.workstationId,
-        centerName: update.centerName.isEmpty ? 'KASU' : update.centerName,
+        centerName: update.centerName.isEmpty ? 'ABU' : update.centerName,
         hallName: update.hallName.isEmpty ? 'Unknown Hall' : update.hallName,
         seatNumber: update.seatNumber.isEmpty ? '-' : update.seatNumber,
         status: update.workstationStatus,

@@ -78,6 +78,7 @@ class CenterExamPortalController extends GetxController {
     isBootstrapping.value = true;
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (candidate.value != null) return;
       final savedRegNo = prefs.getString(_savedCandidateRegNoKey) ?? '';
       if (savedRegNo.trim().isNotEmpty) {
         final restored = CenterExamService.restoreCandidateSession(savedRegNo);

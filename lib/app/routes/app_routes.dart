@@ -1,4 +1,5 @@
 abstract class Routes {
+  static const demo = '/demo';
   static const workstationGate = '/workstation-gate';
   static const deviceRegistration = '/device-registration';
   static const deviceBlocked = '/device-blocked';

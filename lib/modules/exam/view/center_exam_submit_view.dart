@@ -356,7 +356,7 @@ class CenterExamSubmitView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () => Get.offAllNamed(Routes.centerPortal),
+                  onPressed: () => Get.offAllNamed(Routes.demo),
                   icon: const Icon(Icons.dashboard_outlined),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.all(20),
@@ -371,9 +371,9 @@ class CenterExamSubmitView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => Get.offAllNamed(Routes.centerLogin),
+                  onPressed: () => Get.offAllNamed(Routes.demo),
                   icon: const Icon(Icons.logout_rounded),
-                  label: const Text('Logout'),
+                  label: const Text('Return to demo workspace'),
                 ),
               ),
             ],

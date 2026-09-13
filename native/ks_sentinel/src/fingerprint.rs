@@ -55,7 +55,7 @@ pub fn derive_workstation_id(fingerprint_sha256: &str) -> String {
     };
 
     format!(
-        "KASU-CBT-{}-{}-{}",
+        "ABU-CBT-{}-{}-{}",
         &seed[0..4],
         &seed[4..8],
         &seed[8..12]

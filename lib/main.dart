@@ -19,9 +19,9 @@ class CenterExamApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'K-SLAS CBT Center',
+      title: 'ABU Zaria CBT Center',
       debugShowCheckedModeBanner: false,
-      initialRoute: Routes.workstationGate,
+      initialRoute: Routes.demo,
       getPages: AppPages.routes,
       theme: KsTheme.darkAcademic,
     );

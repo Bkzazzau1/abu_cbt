@@ -34,7 +34,7 @@ class PortalHeaderBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kaduna State University',
+                'Ahmadu Bello University, Zaria',
                 style: TextStyle(
                   color: cs.onSurface.withValues(alpha: 0.70),
                   fontWeight: FontWeight.w900,
@@ -153,7 +153,7 @@ class PortalSidebar extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Kaduna State University',
+          'Ahmadu Bello University, Zaria',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w900,

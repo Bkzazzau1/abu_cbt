@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.k_slas_cbt"
+    namespace = "com.example.abu_zaria_cbt"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.k_slas_cbt"
+        applicationId = "com.example.abu_zaria_cbt"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

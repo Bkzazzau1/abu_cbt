@@ -1,6 +1,6 @@
 # Live Camera Gateway (Go)
 
-Go service reserved for live camera and streaming work in K-SLAS CBT.
+Go service reserved for live camera and streaming work in ABU Zaria CBT.
 
 ## Purpose
 

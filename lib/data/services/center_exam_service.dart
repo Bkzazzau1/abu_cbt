@@ -2,10 +2,10 @@ import '../models/center_exam_models.dart';
 
 class CenterExamService {
   static final Map<String, _CandidateSeed> _candidateSeeds = {
-    'KASU/CSC/001': _CandidateSeed(
+    'ABU/CSC/001': _CandidateSeed(
       password: 'cbt001',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/CSC/001',
+        registrationNumber: 'ABU/CSC/001',
         fullName: 'Zainab Musa',
         level: '300 Level',
         photoAsset: 'assets/student_profiles/zainab_musa.png',
@@ -13,10 +13,10 @@ class CenterExamService {
         programme: 'Part-Time',
       ),
     ),
-    'KASU/MTH/004': _CandidateSeed(
+    'ABU/MTH/004': _CandidateSeed(
       password: 'cbt004',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/MTH/004',
+        registrationNumber: 'ABU/MTH/004',
         fullName: 'Ibrahim Bashir Yahaya',
         level: '200 Level',
         photoAsset: 'assets/student_profiles/ibrahim_yahaya.png',
@@ -24,10 +24,10 @@ class CenterExamService {
         programme: 'Full-Time',
       ),
     ),
-    'KASU/GST/011': _CandidateSeed(
+    'ABU/GST/011': _CandidateSeed(
       password: 'cbt011',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/GST/011',
+        registrationNumber: 'ABU/GST/011',
         fullName: 'Maryam Bello',
         level: '200 Level',
         photoAsset: 'assets/student_profiles/maryam_bello.png',
@@ -35,10 +35,10 @@ class CenterExamService {
         programme: 'Full-Time',
       ),
     ),
-    'KASU/CSC/008': _CandidateSeed(
+    'ABU/CSC/008': _CandidateSeed(
       password: 'cbt008',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/CSC/008',
+        registrationNumber: 'ABU/CSC/008',
         fullName: 'Sadiq Lawal',
         level: '300 Level',
         photoAsset: 'assets/student_profiles/sadiq_lawal.png',
@@ -46,10 +46,10 @@ class CenterExamService {
         programme: 'Full-Time',
       ),
     ),
-    'KASU/BIO/002': _CandidateSeed(
+    'ABU/BIO/002': _CandidateSeed(
       password: 'cbt002',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/BIO/002',
+        registrationNumber: 'ABU/BIO/002',
         fullName: 'Fatima Musa',
         level: '200 Level',
         photoAsset: 'assets/student_profiles/fatima_musa.png',
@@ -57,10 +57,10 @@ class CenterExamService {
         programme: 'Full-Time',
       ),
     ),
-    'KASU/CHM/007': _CandidateSeed(
+    'ABU/CHM/007': _CandidateSeed(
       password: 'cbt007',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/CHM/007',
+        registrationNumber: 'ABU/CHM/007',
         fullName: 'Umar Aliyu',
         level: '200 Level',
         photoAsset: 'assets/student_profiles/umar_aliyu.png',
@@ -68,10 +68,10 @@ class CenterExamService {
         programme: 'Full-Time',
       ),
     ),
-    'KASU/PHY/003': _CandidateSeed(
+    'ABU/PHY/003': _CandidateSeed(
       password: 'cbt003',
       candidate: CenterCandidate(
-        registrationNumber: 'KASU/PHY/003',
+        registrationNumber: 'ABU/PHY/003',
         fullName: 'Aisha Bello',
         level: '200 Level',
         photoAsset: 'assets/student_profiles/aisha_bello.png',
@@ -123,7 +123,7 @@ class CenterExamService {
 
   static List<CenterExam> _buildExamPlan(String regNo) {
     switch (regNo) {
-      case 'KASU/CSC/001':
+      case 'ABU/CSC/001':
         return [
           _dueExam(
             id: 'csc001-due',
@@ -164,7 +164,7 @@ class CenterExamService {
             end: '01:00 PM',
           ),
         ];
-      case 'KASU/MTH/004':
+      case 'ABU/MTH/004':
         return [
           _dueExam(
             id: 'mth004-due',
@@ -196,7 +196,7 @@ class CenterExamService {
             end: '09:00 AM',
           ),
         ];
-      case 'KASU/GST/011':
+      case 'ABU/GST/011':
         return [
           _dueExam(
             id: 'gst011-due',
@@ -228,7 +228,7 @@ class CenterExamService {
             end: '02:00 PM',
           ),
         ];
-      case 'KASU/CSC/008':
+      case 'ABU/CSC/008':
         return [
           _dueExam(
             id: 'csc008-due',
@@ -260,7 +260,7 @@ class CenterExamService {
             end: '10:00 AM',
           ),
         ];
-      case 'KASU/BIO/002':
+      case 'ABU/BIO/002':
         return [
           _dueExam(
             id: 'bio002-due',
@@ -292,7 +292,7 @@ class CenterExamService {
             end: '11:00 AM',
           ),
         ];
-      case 'KASU/CHM/007':
+      case 'ABU/CHM/007':
         return [
           _dueExam(
             id: 'chm007-due',
@@ -324,7 +324,7 @@ class CenterExamService {
             end: '03:00 PM',
           ),
         ];
-      case 'KASU/PHY/003':
+      case 'ABU/PHY/003':
         return [
           _dueExam(
             id: 'phy003-due',

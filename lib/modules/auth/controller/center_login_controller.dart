@@ -115,7 +115,7 @@ class CenterLoginController extends GetxController {
         WorkstationPresenceRecord(
           workstationId: registration.workstationId,
           centerName: registration.centerName.isEmpty
-              ? 'KASU'
+              ? 'ABU'
               : registration.centerName,
           hallName: registration.hallName,
           seatNumber: registration.seatNumber,

@@ -31,7 +31,7 @@ class KsPageShell extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [KsUiTokens.bgTop, Color(0xFF09172A), KsUiTokens.bgBottom],
+          colors: [KsUiTokens.bgTop, Color(0xFF10251D), KsUiTokens.bgBottom],
         ),
       ),
       child: Stack(

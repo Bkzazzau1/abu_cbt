@@ -81,7 +81,7 @@ class _CenterLoginViewState extends State<CenterLoginView> {
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'K-SLAS CBT Center',
+                              'ABU Zaria CBT Center',
                               style: TextStyle(
                                 color: cs.onSurface,
                                 fontSize: 26,
@@ -206,10 +206,10 @@ class _CenterLoginViewState extends State<CenterLoginView> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              'Test accounts: KASU/CSC/001 (cbt001), '
-                              'KASU/MTH/004 (cbt004), KASU/GST/011 (cbt011), '
-                              'KASU/CSC/008 (cbt008), KASU/BIO/002 (cbt002), '
-                              'KASU/CHM/007 (cbt007), KASU/PHY/003 (cbt003)',
+                              'Test accounts: ABU/CSC/001 (cbt001), '
+                              'ABU/MTH/004 (cbt004), ABU/GST/011 (cbt011), '
+                              'ABU/CSC/008 (cbt008), ABU/BIO/002 (cbt002), '
+                              'ABU/CHM/007 (cbt007), ABU/PHY/003 (cbt003)',
                               style: TextStyle(
                                 color: cs.onSurface.withValues(alpha: 0.68),
                                 fontWeight: FontWeight.w600,

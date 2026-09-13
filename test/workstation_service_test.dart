@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:k_slas_cbt/data/models/workstation_models.dart';
-import 'package:k_slas_cbt/data/services/workstation_service.dart';
+import 'package:abu_zaria_cbt/data/models/workstation_models.dart';
+import 'package:abu_zaria_cbt/data/services/workstation_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,7 @@ void main() {
       final now = DateTime.now().toIso8601String();
       await WorkstationService.save(
         WorkstationRegistration(
-          workstationId: 'KASU-CBT-TEST-0001',
+          workstationId: 'ABU-CBT-TEST-0001',
           centerName: '',
           hallName: '',
           seatNumber: '',
@@ -28,10 +28,10 @@ void main() {
       );
 
       final updated = await WorkstationService.ensureAssignmentFromAttendance(
-        candidateRegistrationNumber: 'KASU/CSC/001',
+        candidateRegistrationNumber: 'ABU/CSC/001',
       );
 
-      expect(updated.centerName, 'KASU');
+      expect(updated.centerName, 'ABU');
       expect(updated.hallName, 'Hall A');
       expect(updated.seatNumber, 'A-01');
       expect(updated.status, WorkstationStatus.whitelisted);
@@ -42,8 +42,8 @@ void main() {
     final now = DateTime.now().toIso8601String();
     await WorkstationService.save(
       WorkstationRegistration(
-        workstationId: 'KASU-CBT-TEST-0002',
-        centerName: 'KASU',
+        workstationId: 'ABU-CBT-TEST-0002',
+        centerName: 'ABU',
         hallName: 'Hall Z',
         seatNumber: 'Z-99',
         status: WorkstationStatus.whitelisted,
@@ -53,10 +53,10 @@ void main() {
     );
 
     final updated = await WorkstationService.ensureAssignmentFromAttendance(
-      candidateRegistrationNumber: 'KASU/CSC/001',
+      candidateRegistrationNumber: 'ABU/CSC/001',
     );
 
-    expect(updated.centerName, 'KASU');
+    expect(updated.centerName, 'ABU');
     expect(updated.hallName, 'Hall Z');
     expect(updated.seatNumber, 'Z-99');
   });

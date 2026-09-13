@@ -1,4 +1,4 @@
-package com.example.k_slas_cbt
+package com.example.abu_zaria_cbt
 
 import io.flutter.embedding.android.FlutterActivity
 

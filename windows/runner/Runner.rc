@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "k_slas_cbt" "\0"
+            VALUE "FileDescription", "abu_zaria_cbt" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "k_slas_cbt" "\0"
+            VALUE "InternalName", "abu_zaria_cbt" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "k_slas_cbt.exe" "\0"
-            VALUE "ProductName", "k_slas_cbt" "\0"
+            VALUE "OriginalFilename", "abu_zaria_cbt.exe" "\0"
+            VALUE "ProductName", "abu_zaria_cbt" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -8,11 +8,11 @@ class KsTheme {
   static ThemeData get darkAcademic {
     const colorScheme = ColorScheme(
       brightness: Brightness.dark,
-      primary: Color(0xFF39D2FF),
+      primary: Color(0xFF78CDA5),
       onPrimary: Color(0xFF03111C),
       primaryContainer: Color(0xFF12324A),
       onPrimaryContainer: Color(0xFFE6F9FF),
-      secondary: Color(0xFF7C5CFF),
+      secondary: Color(0xFFB9B47A),
       onSecondary: Colors.white,
       secondaryContainer: Color(0xFF2A2156),
       onSecondaryContainer: Color(0xFFF1EEFF),
@@ -24,7 +24,7 @@ class KsTheme {
       onError: Colors.white,
       errorContainer: Color(0xFF4B1616),
       onErrorContainer: Color(0xFFFFE7E7),
-      surface: Color(0xFF0D1B2A),
+      surface: Color(0xFF11271F),
       onSurface: Color(0xFFF5F7FA),
       surfaceContainerHighest: Color(0xFF18283A),
       onSurfaceVariant: Color(0xFF94A3B8),
@@ -33,7 +33,7 @@ class KsTheme {
       shadow: Colors.black,
       scrim: Colors.black,
       inverseSurface: Color(0xFFF5F7FA),
-      onInverseSurface: Color(0xFF0D1B2A),
+      onInverseSurface: Color(0xFF11271F),
       inversePrimary: Color(0xFF1D8FFF),
     );
 

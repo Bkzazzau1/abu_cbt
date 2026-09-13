@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_status_chip.dart';
+
 import '../../../data/models/center_exam_models.dart';
 import '../../../data/models/invigilator_models.dart';
 import '../../../data/models/workstation_models.dart';
@@ -17,6 +16,7 @@ import '../../../data/services/network_health_service.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 import '../../../data/services/workstation_service.dart';
 import '../models/whiteboard_models.dart';
+import '../../demo/abu_demo_theme.dart';
 import '../../portal/controller/center_exam_portal_controller.dart';
 
 class CenterExamRunController extends GetxController {
@@ -277,58 +277,28 @@ class CenterExamRunController extends GetxController {
     if (isSubmitted.value || _timeUpDialogShown) return;
     _timer?.cancel();
     _timeUpDialogShown = true;
-
-    final cs = Get.theme.colorScheme;
     Get.dialog(
-      Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: GlassCard(
-          tone: GlassCardTone.warning,
-          showGlow: true,
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.timer_off_outlined, color: Color(0xFFF59E0B)),
-                  SizedBox(width: 10),
-                  Text(
-                    'Session Time Elapsed',
-                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Your exam time has ended. The system will submit your responses now.',
-                style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w600,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 14),
-              const KsStatusChip(
-                label: 'Auto Submit in Progress',
-                tone: KsStatusChipTone.warningSoft,
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    Get.back();
-                    await _finalizeSubmission(autoSubmitted: true);
-                  },
-                  icon: const Icon(Icons.cloud_upload_outlined),
-                  label: const Text('Proceed'),
-                ),
-              ),
-            ],
+      Theme(
+        data: abuDemoTheme(),
+        child: AlertDialog(
+          icon: const Icon(Icons.timer_off_outlined, color: abuGreen, size: 32),
+          title: const Text('Your practice time has ended'),
+          content: const SizedBox(
+            width: 420,
+            child: Text(
+              'Your responses are ready to submit. Continue to finish this session and view your practice summary.',
+              style: TextStyle(height: 1.7),
+            ),
           ),
+          actions: [
+            FilledButton(
+              onPressed: () async {
+                Get.back();
+                await _finalizeSubmission(autoSubmitted: true);
+              },
+              child: const Text('View my summary'),
+            ),
+          ],
         ),
       ),
       barrierDismissible: false,
@@ -470,91 +440,29 @@ class CenterExamRunController extends GetxController {
 
   void requestSubmit() {
     if (isSubmitted.value || exam.value == null) return;
-    final cs = Get.theme.colorScheme;
-    final unanswered = unansweredCount;
-    final answered = totalQuestions - unanswered;
-    final flagged = flaggedQuestionIds.length;
-
     Get.dialog(
-      Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: GlassCard(
-          tone: GlassCardTone.primary,
-          showGlow: true,
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.verified_user_outlined, color: Color(0xFF39D2FF)),
-                  SizedBox(width: 10),
-                  Text(
-                    'Submit Examination',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                unanswered == 0
-                    ? 'All questions appear answered. Submit now for final grading?'
-                    : 'You still have $unanswered unanswered question(s). You can review before submitting.',
-                style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.78),
-                  fontWeight: FontWeight.w600,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  KsStatusChip(
-                    label: 'Answered: $answered',
-                    tone: KsStatusChipTone.success,
-                  ),
-                  KsStatusChip(
-                    label: 'Unanswered: $unanswered',
-                    tone: unanswered > 0
-                        ? KsStatusChipTone.warning
-                        : KsStatusChipTone.info,
-                  ),
-                  if (flagged > 0)
-                    KsStatusChip(
-                      label: 'Flagged: $flagged',
-                      tone: KsStatusChipTone.warningSoft,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: Get.back,
-                      icon: const Icon(Icons.visibility_outlined),
-                      label: const Text('Review Answers'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        Get.back();
-                        await _finalizeSubmission(autoSubmitted: false);
-                      },
-                      icon: const Icon(Icons.cloud_upload_outlined),
-                      label: const Text('Submit Now'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      Theme(
+        data: abuDemoTheme(),
+        child: AlertDialog(
+          title: const Text('Finish this practice session?'),
+          content: SizedBox(
+            width: 420,
+            child: Text(
+              'You have answered ${totalQuestions - unansweredCount} of $totalQuestions questions. '
+              'After submission, your responses cannot be changed. You can start a new practice attempt at any time.',
+              style: const TextStyle(height: 1.7),
+            ),
           ),
+          actions: [
+            TextButton(onPressed: Get.back, child: const Text('Keep working')),
+            FilledButton(
+              onPressed: () async {
+                Get.back();
+                await _finalizeSubmission(autoSubmitted: false);
+              },
+              child: const Text('Submit practice'),
+            ),
+          ],
         ),
       ),
       barrierDismissible: false,
@@ -652,7 +560,7 @@ class CenterExamRunController extends GetxController {
         WorkstationPresenceRecord(
           workstationId: registration.workstationId,
           centerName: registration.centerName.isEmpty
-              ? 'KASU'
+              ? 'ABU'
               : registration.centerName,
           hallName: registration.hallName,
           seatNumber: registration.seatNumber,

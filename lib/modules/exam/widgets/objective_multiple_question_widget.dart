@@ -38,7 +38,10 @@ class ObjectiveMultipleQuestionWidget extends StatelessWidget {
                 onTap: () => onToggle(i),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     color: selected
@@ -56,7 +59,11 @@ class ObjectiveMultipleQuestionWidget extends StatelessWidget {
                       Expanded(
                         child: Text(
                           question.options[i],
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            height: 1.5,
+                          ),
                         ),
                       ),
                     ],

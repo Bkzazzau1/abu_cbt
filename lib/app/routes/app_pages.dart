@@ -1,12 +1,13 @@
 import 'package:get/get.dart';
+import '../../modules/demo/abu_demo_workspace.dart';
 
 import '../../modules/auth/controller/center_login_controller.dart';
 import '../../modules/auth/view/center_login_view.dart';
 import '../../modules/exam/controller/center_exam_run_controller.dart';
-import '../../modules/exam/view/center_exam_confirmation_view.dart';
-import '../../modules/exam/view/center_exam_instruction_view.dart';
-import '../../modules/exam/view/center_exam_run_view.dart';
-import '../../modules/exam/view/center_exam_submit_view.dart';
+import '../../modules/practice/practice_preflight_view.dart';
+import '../../modules/practice/practice_portal_view.dart';
+import '../../modules/practice/practice_run_view.dart';
+import '../../modules/practice/practice_summary_view.dart';
 import '../../modules/invigilator/controller/attendance_register_controller.dart';
 import '../../modules/invigilator/controller/candidate_action_panel_controller.dart';
 import '../../modules/invigilator/controller/candidate_checkin_controller.dart';
@@ -28,7 +29,7 @@ import '../../modules/invigilator/view/invigilator_login_view.dart';
 import '../../modules/invigilator/view/malpractice_report_view.dart';
 import '../../modules/invigilator/view/seat_map_view.dart';
 import '../../modules/portal/controller/center_exam_portal_controller.dart';
-import '../../modules/portal/view/center_exam_portal_view.dart';
+
 import '../../modules/workstation/controller/device_blocked_controller.dart';
 import '../../modules/workstation/controller/device_registration_controller.dart';
 import '../../modules/workstation/controller/workstation_gate_controller.dart';
@@ -39,6 +40,7 @@ import 'app_routes.dart';
 
 class AppPages {
   static final routes = <GetPage>[
+    GetPage(name: Routes.demo, page: () => const AbuDemoWorkspace()),
     GetPage(
       name: Routes.workstationGate,
       page: () => const WorkstationGateView(),
@@ -73,7 +75,7 @@ class AppPages {
     ),
     GetPage(
       name: Routes.centerPortal,
-      page: () => const CenterExamPortalView(),
+      page: () => const PracticePortalView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<CenterExamPortalController>(
           () => CenterExamPortalController(),
@@ -82,22 +84,22 @@ class AppPages {
     ),
     GetPage(
       name: Routes.centerExamInstruction,
-      page: () => const CenterExamInstructionView(),
+      page: () => const PracticePreflightView(),
     ),
     GetPage(
       name: Routes.centerExamConfirmation,
-      page: () => const CenterExamConfirmationView(),
+      page: () => const PracticePreflightView(confirmation: true),
     ),
     GetPage(
       name: Routes.centerExamRun,
-      page: () => const CenterExamRunView(),
+      page: () => const PracticeRunView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<CenterExamRunController>(() => CenterExamRunController());
       }),
     ),
     GetPage(
       name: Routes.centerExamSubmit,
-      page: () => const CenterExamSubmitView(),
+      page: () => const PracticeSummaryView(),
     ),
     GetPage(
       name: Routes.invigilatorLogin,

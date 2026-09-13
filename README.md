@@ -1,4 +1,29 @@
-# K-SLAS CBT
+# ABU Zaria CBT
+
+## Interactive UI demo
+
+Run `flutter run -d chrome` or `flutter run -d windows`. The app opens the ABU
+workspace. Switch between Administrator, Invigilator and Student using the role
+menu at the top right.
+
+- Administrator: create exam drafts, publish/start/end sessions, add and approve
+  single-choice questions, register candidates and publish illustrative results.
+- Invigilator: verify attendance, inspect hall seating and resolve incidents.
+- Student: preview published results and open the existing practice exam journey.
+
+The Student role’s practice button opens a dedicated practice centre with course
+search, instructions, identity confirmation, a responsive question player, answer
+review and a session summary. Answers are retained during the running session;
+refreshing or closing the app does not preserve the attempt. Use
+`flutter test test/practice_flow_test.dart` to check the practice journey.
+
+Workspace data is in memory and resets when the app restarts. The question bank
+and sample timetable demonstrate administration; the practice player uses its
+existing multi-format question set. These are separate demo flows.
+
+Validation: `flutter test` and `flutter analyze`. On Windows,
+`flutter test tool/ui_preview_test.dart` renders a desktop preview in
+`docs/previews/abu-overview.png` using the installed Segoe UI font.
 
 Computer-based testing application with Flutter on the client and native
 backend/runtime services for secure exam delivery.

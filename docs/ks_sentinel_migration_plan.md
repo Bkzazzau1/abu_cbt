@@ -1,4 +1,4 @@
-# K-SLAS Sentinel Migration Plan
+# ABU Zaria Sentinel Migration Plan
 
 This project now includes:
 

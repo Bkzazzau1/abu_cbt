@@ -399,7 +399,7 @@ class _ScientificCalculatorDialogState
     if (prefix.endsWith('-')) {
       return '${prefix.substring(0, prefix.length - 1)}$value';
     }
-    return '${prefix}-$value';
+    return '$prefix-$value';
   }
 
   String _displayExpression(String source) {

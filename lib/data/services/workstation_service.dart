@@ -101,7 +101,7 @@ class WorkstationService {
 
   static Future<WorkstationRegistration> ensureAssignmentFromAttendance({
     required String candidateRegistrationNumber,
-    String fallbackCenterName = 'KASU',
+    String fallbackCenterName = 'ABU',
   }) async {
     final current = await loadOrCreate();
     final needsHall = current.hallName.trim().isEmpty;
@@ -197,6 +197,6 @@ class WorkstationService {
       return List.generate(len, (_) => chars[r.nextInt(chars.length)]).join();
     }
 
-    return 'KASU-CBT-${block(4)}-${block(4)}-${block(4)}';
+    return 'ABU-CBT-${block(4)}-${block(4)}-${block(4)}';
   }
 }

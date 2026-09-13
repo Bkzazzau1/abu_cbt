@@ -9,7 +9,7 @@ class DeviceRegistrationController extends GetxController {
   final isLoading = false.obs;
   final registration = Rxn<WorkstationRegistration>();
 
-  final centerController = TextEditingController(text: 'KASU');
+  final centerController = TextEditingController(text: 'ABU');
   final hallController = TextEditingController();
   final seatController = TextEditingController();
 
