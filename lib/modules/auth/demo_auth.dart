@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../app/routes/app_routes.dart';
 import '../../data/models/center_exam_models.dart';
 import '../../data/services/center_exam_service.dart';
-import '../portal/controller/center_exam_portal_controller.dart';
 import '../exam/controller/center_exam_run_controller.dart';
-import 'fingerprint_reader.dart';
+import '../portal/controller/center_exam_portal_controller.dart';
 
 class DemoAccount {
   const DemoAccount(this.role, this.username, this.name);
@@ -14,11 +14,13 @@ class DemoAccount {
   String get initials => name.split(' ').take(2).map((s) => s[0]).join();
 }
 
-/// Demo-only account separation. Credentials are sample data, not a backend.
+/// Demo-only account separation. Student records represent university-held
+/// examination records; students do not create or register these profiles.
 class DemoAuth {
   static final instance = DemoAuth();
   DemoAccount? account;
   CenterLoginResult? student;
+
   static const samples = <String, List<(String, String, String)>>{
     'Administrator': [('admin.abu', 'AbuAdmin123!', 'ABU Administrator')],
     'Invigilator': [
@@ -36,13 +38,14 @@ class DemoAuth {
       ('ABU/PHY/003', 'cbt003', 'Aisha Bello'),
     ],
   };
-  bool completeStudentFingerprint(
-    String registration,
-    FingerprintResult verification,
-  ) {
-    if (verification != FingerprintResult.matched) return false;
-    final session = CenterExamService.restoreCandidateSession(registration);
+
+  /// Opens a student session from an existing university examination record.
+  /// This is a record lookup/login step only. Final biometric authentication
+  /// happens immediately before the examination is unlocked.
+  bool beginStudentSession(String registrationNumber) {
+    final session = CenterExamService.restoreCandidateSession(registrationNumber);
     if (session == null) return false;
+
     student = session;
     account = DemoAccount(
       'Student',
@@ -73,6 +76,8 @@ class DemoAuth {
           ? Get.find<CenterExamPortalController>()
           : Get.put(CenterExamPortalController(), permanent: true);
       await controller.loadCandidateSession(student!, persist: false);
+      Get.offAllNamed(Routes.centerPortal);
+      return;
     }
     Get.offAllNamed(Routes.demo);
   }
@@ -98,23 +103,29 @@ class DemoRouteGuard extends GetMiddleware {
     if (route == Routes.centerLogin || route == Routes.invigilatorLogin) {
       return null;
     }
+
     final role = DemoAuth.instance.account?.role;
     if (role == null) return const RouteSettings(name: Routes.centerLogin);
+
     const studentRoutes = [
       Routes.centerPortal,
-      Routes.centerExamInstruction,
       Routes.centerExamConfirmation,
+      Routes.centerExamInstruction,
+      Routes.centerExamFingerprint,
       Routes.centerExamRun,
       Routes.centerExamSubmit,
       Routes.deviceRegistration,
     ];
-    if (route == Routes.demo) return null;
-    if (role == 'Student' && !studentRoutes.contains(route)) {
+
+    if (role == 'Student') {
+      if (studentRoutes.contains(route)) return null;
+      return const RouteSettings(name: Routes.centerPortal);
+    }
+
+    if (studentRoutes.contains(route)) {
       return const RouteSettings(name: Routes.demo);
     }
-    if (role != 'Student' && studentRoutes.contains(route)) {
-      return const RouteSettings(name: Routes.demo);
-    }
+
     return null;
   }
 }

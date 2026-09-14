@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+
 import '../../demo/abu_demo_theme.dart';
 import '../demo_auth.dart';
-import '../../../data/services/center_exam_service.dart';
-import 'fingerprint_login_view.dart';
 
 class RoleLoginView extends StatefulWidget {
   const RoleLoginView({super.key});
+
   @override
   State<RoleLoginView> createState() => _RoleLoginViewState();
 }
 
 class _RoleLoginViewState extends State<RoleLoginView> {
   String role = 'Student';
-  final username = TextEditingController(), password = TextEditingController();
+  final username = TextEditingController();
+  final password = TextEditingController();
   final form = GlobalKey<FormState>();
-  bool hidden = true, busy = false;
+  bool hidden = true;
+  bool busy = false;
   String? error;
+
   @override
   void dispose() {
     username.dispose();
@@ -25,33 +28,24 @@ class _RoleLoginViewState extends State<RoleLoginView> {
 
   Future<void> submit() async {
     if (busy || !form.currentState!.validate()) return;
-    if (role == 'Student') {
-      final session = CenterExamService.restoreCandidateSession(
-        username.text.trim(),
-      );
-      if (session == null) {
-        setState(
-          () => error =
-              'Registration number not found. Check your details and try again.',
-        );
-        return;
-      }
-      setState(() => error = null);
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => FingerprintLoginView(
-            candidate: session.candidate,
-            exams: session.exams,
-          ),
-        ),
-      );
-      return;
-    }
+
     setState(() {
       busy = true;
       error = null;
     });
+
     try {
+      if (role == 'Student') {
+        final found = DemoAuth.instance.beginStudentSession(username.text.trim());
+        if (!mounted) return;
+        if (!found) {
+          setState(() => error = 'Registration number not found.');
+          return;
+        }
+        await DemoAuth.instance.openWorkspace();
+        return;
+      }
+
       final success = await DemoAuth.instance.signIn(
         role,
         username.text,
@@ -61,10 +55,7 @@ class _RoleLoginViewState extends State<RoleLoginView> {
       if (success) {
         await DemoAuth.instance.openWorkspace();
       } else {
-        setState(
-          () => error =
-              'These details do not match a $role account. Check your role, username and password.',
-        );
+        setState(() => error = 'Invalid username or password.');
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -106,7 +97,7 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                       ),
                       const SizedBox(height: 7),
                       const Text(
-                        'Examination portal',
+                        'Examination Portal',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: abuMuted),
                       ),
@@ -126,21 +117,11 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                               children: [
                                 Text(
                                   role == 'Student'
-                                      ? 'Enter your registration number'
-                                      : 'Sign in to your workspace',
-                                  style: TextStyle(
+                                      ? 'Student Login'
+                                      : '$role Login',
+                                  style: const TextStyle(
                                     fontSize: 23,
                                     fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  role == 'Student'
-                                      ? 'Step 1 of 2. Next, verify your fingerprint to access your exams.'
-                                      : 'Choose your role and enter your own account details.',
-                                  style: TextStyle(
-                                    color: abuMuted,
-                                    height: 1.6,
                                   ),
                                 ),
                                 const SizedBox(height: 22),
@@ -176,35 +157,35 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                                   controller: username,
                                   enabled: !busy,
                                   autofillHints: const [AutofillHints.username],
-                                  textInputAction: TextInputAction.next,
+                                  textInputAction: role == 'Student'
+                                      ? TextInputAction.done
+                                      : TextInputAction.next,
+                                  onFieldSubmitted: role == 'Student'
+                                      ? (_) => submit()
+                                      : null,
                                   decoration: InputDecoration(
                                     labelText: role == 'Student'
                                         ? 'Registration number'
                                         : 'Staff username',
-                                    prefixIcon: const Icon(
-                                      Icons.person_outline,
-                                    ),
+                                    prefixIcon: const Icon(Icons.person_outline),
                                   ),
-                                  validator: (v) =>
-                                      v == null || v.trim().isEmpty
-                                      ? 'Enter your ${role == 'Student' ? 'registration number' : 'username'}'
+                                  validator: (v) => v == null || v.trim().isEmpty
+                                      ? role == 'Student'
+                                            ? 'Enter registration number'
+                                            : 'Enter username'
                                       : null,
                                 ),
-                                const SizedBox(height: 18),
-                                if (role != 'Student')
+                                if (role != 'Student') ...[
+                                  const SizedBox(height: 18),
                                   TextFormField(
                                     controller: password,
                                     enabled: !busy,
                                     obscureText: hidden,
-                                    autofillHints: const [
-                                      AutofillHints.password,
-                                    ],
+                                    autofillHints: const [AutofillHints.password],
                                     onFieldSubmitted: (_) => submit(),
                                     decoration: InputDecoration(
                                       labelText: 'Password',
-                                      prefixIcon: const Icon(
-                                        Icons.lock_outline,
-                                      ),
+                                      prefixIcon: const Icon(Icons.lock_outline),
                                       suffixIcon: IconButton(
                                         tooltip: hidden
                                             ? 'Show password'
@@ -219,9 +200,10 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                                       ),
                                     ),
                                     validator: (v) => v == null || v.isEmpty
-                                        ? 'Enter your password'
+                                        ? 'Enter password'
                                         : null,
                                   ),
+                                ],
                                 if (error != null) ...[
                                   const SizedBox(height: 14),
                                   Semantics(
@@ -231,7 +213,6 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                                       style: const TextStyle(
                                         color: Color(0xFFB33D35),
                                         fontSize: 12,
-                                        height: 1.5,
                                       ),
                                     ),
                                   ),
@@ -249,67 +230,14 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                                         )
                                       : Text(
                                           role == 'Student'
-                                              ? 'Next'
-                                              : 'Sign in as $role',
+                                              ? 'Continue'
+                                              : 'Sign in',
                                         ),
-                                ),
-                                const SizedBox(height: 20),
-                                ExpansionTile(
-                                  key: ValueKey(role),
-                                  tilePadding: EdgeInsets.zero,
-                                  title: const Text(
-                                    'Demo account details',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: abuMuted,
-                                    ),
-                                  ),
-                                  children: DemoAuth.samples[role]!
-                                      .map(
-                                        (a) => ListTile(
-                                          contentPadding: EdgeInsets.zero,
-                                          title: Text(
-                                            a.$3,
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          subtitle: SelectableText(
-                                            role == 'Student'
-                                                ? a.$1
-                                                : '${a.$1}\nPassword: ${a.$2}',
-                                            style: const TextStyle(
-                                              fontSize: 11,
-                                              height: 1.7,
-                                            ),
-                                          ),
-                                          trailing: TextButton(
-                                            onPressed: busy
-                                                ? null
-                                                : () {
-                                                    username.text = a.$1;
-                                                    password.text = a.$2;
-                                                    setState(
-                                                      () => error = null,
-                                                    );
-                                                  },
-                                            child: const Text('Use'),
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Demo accounts only · Sign out before using another account.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: abuMuted, fontSize: 11),
                       ),
                     ],
                   ),

@@ -5,10 +5,11 @@ import '../../modules/auth/controller/center_login_controller.dart';
 import '../../modules/auth/view/role_login_view.dart';
 import '../../modules/auth/demo_auth.dart';
 import '../../modules/exam/controller/center_exam_run_controller.dart';
-import '../../modules/practice/practice_preflight_view.dart';
-import '../../modules/practice/practice_portal_view.dart';
-import '../../modules/practice/practice_run_view.dart';
-import '../../modules/exam/view/center_exam_submit_view.dart';
+import '../../modules/exam/view/center_exam_run_view.dart';
+import '../../modules/exam/view/current_exam_portal_view.dart';
+import '../../modules/exam/view/exam_fingerprint_view.dart';
+import '../../modules/exam/view/exam_preflight_view.dart';
+import '../../modules/exam/view/official_exam_submit_view.dart';
 import '../../modules/invigilator/controller/attendance_register_controller.dart';
 import '../../modules/invigilator/controller/candidate_action_panel_controller.dart';
 import '../../modules/invigilator/controller/candidate_checkin_controller.dart';
@@ -85,7 +86,7 @@ class AppPages {
     GetPage(
       middlewares: [DemoRouteGuard()],
       name: Routes.centerPortal,
-      page: () => const PracticePortalView(),
+      page: () => const CurrentExamPortalView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<CenterExamPortalController>(
           () => CenterExamPortalController(),
@@ -94,18 +95,23 @@ class AppPages {
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
-      name: Routes.centerExamInstruction,
-      page: () => const PracticePreflightView(),
+      name: Routes.centerExamConfirmation,
+      page: () => const ExamPreflightView(confirmation: true),
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
-      name: Routes.centerExamConfirmation,
-      page: () => const PracticePreflightView(confirmation: true),
+      name: Routes.centerExamInstruction,
+      page: () => const ExamPreflightView(),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
+      name: Routes.centerExamFingerprint,
+      page: () => const ExamFingerprintView(),
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
       name: Routes.centerExamRun,
-      page: () => const PracticeRunView(),
+      page: () => const CenterExamRunView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<CenterExamRunController>(() => CenterExamRunController());
       }),
@@ -113,7 +119,7 @@ class AppPages {
     GetPage(
       middlewares: [DemoRouteGuard()],
       name: Routes.centerExamSubmit,
-      page: () => const CenterExamSubmitView(),
+      page: () => const OfficialExamSubmitView(),
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
