@@ -36,6 +36,7 @@ class DemoAuth {
       ('ABU/PHY/003', 'cbt003', 'Aisha Bello'),
     ],
   };
+
   bool completeStudentFingerprint(
     String registration,
     FingerprintResult verification,
@@ -73,6 +74,8 @@ class DemoAuth {
           ? Get.find<CenterExamPortalController>()
           : Get.put(CenterExamPortalController(), permanent: true);
       await controller.loadCandidateSession(student!, persist: false);
+      Get.offAllNamed(Routes.centerPortal);
+      return;
     }
     Get.offAllNamed(Routes.demo);
   }
@@ -98,8 +101,10 @@ class DemoRouteGuard extends GetMiddleware {
     if (route == Routes.centerLogin || route == Routes.invigilatorLogin) {
       return null;
     }
+
     final role = DemoAuth.instance.account?.role;
     if (role == null) return const RouteSettings(name: Routes.centerLogin);
+
     const studentRoutes = [
       Routes.centerPortal,
       Routes.centerExamInstruction,
@@ -108,13 +113,16 @@ class DemoRouteGuard extends GetMiddleware {
       Routes.centerExamSubmit,
       Routes.deviceRegistration,
     ];
-    if (route == Routes.demo) return null;
-    if (role == 'Student' && !studentRoutes.contains(route)) {
+
+    if (role == 'Student') {
+      if (studentRoutes.contains(route)) return null;
+      return const RouteSettings(name: Routes.centerPortal);
+    }
+
+    if (studentRoutes.contains(route)) {
       return const RouteSettings(name: Routes.demo);
     }
-    if (role != 'Student' && studentRoutes.contains(route)) {
-      return const RouteSettings(name: Routes.demo);
-    }
+
     return null;
   }
 }
