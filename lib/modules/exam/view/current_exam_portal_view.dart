@@ -32,15 +32,10 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
         return exam;
       }
     }
-    for (final exam in exams) {
-      if (exam.questions.isNotEmpty && exam.status != CenterExamStatus.completed) {
-        return exam;
-      }
-    }
     return null;
   }
 
-  void _openExam(CenterExam source) {
+  void _startExam(CenterExam source) {
     final exam = CenterExam(
       id: source.id,
       courseCode: source.courseCode,
@@ -53,7 +48,7 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
       durationMinutes: source.durationMinutes,
       questions: [...source.questions],
     );
-    Get.toNamed(Routes.centerExamInstruction, arguments: exam);
+    Get.toNamed(Routes.centerExamConfirmation, arguments: exam);
   }
 
   @override
@@ -66,7 +61,7 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
           fit: StackFit.expand,
           children: [
             Image.asset('assets/senate.png', fit: BoxFit.cover),
-            Container(color: abuCanvas.withValues(alpha: 0.88)),
+            Container(color: abuCanvas.withValues(alpha: 0.90)),
             SafeArea(
               child: Column(
                 children: [
@@ -76,36 +71,36 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
                       final candidate = portal.candidate.value;
                       final exam = _currentExam(portal.exams.toList());
                       return SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
+                        padding: const EdgeInsets.fromLTRB(24, 28, 24, 42),
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1050),
+                            constraints: const BoxConstraints(maxWidth: 1080),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 const Text(
-                                  'CURRENT EXAMINATION',
+                                  'STUDENT EXAMINATION DASHBOARD',
                                   style: TextStyle(
                                     color: abuGreen,
                                     fontWeight: FontWeight.w800,
                                     fontSize: 11,
-                                    letterSpacing: 2.1,
+                                    letterSpacing: 2.0,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const Text(
-                                  'Candidate Examination Portal',
-                                  style: TextStyle(
+                                Text(
+                                  'Welcome, ${candidate?.fullName.split(' ').first ?? 'candidate'}',
+                                  style: const TextStyle(
                                     color: abuInk,
-                                    fontWeight: FontWeight.w800,
                                     fontSize: 30,
+                                    fontWeight: FontWeight.w800,
                                     letterSpacing: -0.8,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  'Welcome, ${candidate?.fullName.split(' ').first ?? 'candidate'}. Only the examination currently assigned to you is shown here.',
-                                  style: const TextStyle(
+                                const Text(
+                                  'Only the examination currently authorised for you is displayed. Your candidate information is supplied by the university examination records.',
+                                  style: TextStyle(
                                     color: abuMuted,
                                     fontSize: 13,
                                     height: 1.6,
@@ -114,42 +109,47 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
                                 const SizedBox(height: 28),
                                 LayoutBuilder(
                                   builder: (context, constraints) {
-                                    final wide = constraints.maxWidth >= 780;
+                                    final wide = constraints.maxWidth >= 800;
                                     final examCard = exam == null
                                         ? const _NoExamCard()
                                         : _ExamCard(
                                             exam: exam,
-                                            onProceed: () => _openExam(exam),
+                                            onStart: () => _startExam(exam),
                                           );
-                                    final candidateCard = _CandidateCard(
+                                    final recordCard = _CandidateRecordCard(
                                       name: candidate?.fullName ?? 'Candidate',
                                       registrationNumber:
                                           candidate?.registrationNumber ?? '--',
                                       department: candidate?.department ?? '--',
                                       level: candidate?.level ?? '--',
+                                      programme: candidate?.programme ?? '--',
                                       photoAsset: candidate?.photoAsset,
+                                      onDeviceRegistration: () => Get.toNamed(
+                                        Routes.deviceRegistration,
+                                      ),
                                     );
                                     if (!wide) {
                                       return Column(
                                         children: [
                                           examCard,
                                           const SizedBox(height: 18),
-                                          candidateCard,
+                                          recordCard,
                                         ],
                                       );
                                     }
                                     return Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Expanded(flex: 3, child: examCard),
                                         const SizedBox(width: 22),
-                                        Expanded(flex: 2, child: candidateCard),
+                                        Expanded(flex: 2, child: recordCard),
                                       ],
                                     );
                                   },
                                 ),
                                 const SizedBox(height: 22),
-                                const _SecurityNotice(),
+                                const _FlowNotice(),
                               ],
                             ),
                           ),
@@ -169,6 +169,7 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
 
 class _Header extends StatelessWidget {
   const _Header({required this.onSignOut});
+
   final VoidCallback onSignOut;
 
   @override
@@ -199,7 +200,7 @@ class _Header extends StatelessWidget {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'SECURE CBT EXAMINATION',
+                  'SECURE CBT EXAMINATION PORTAL',
                   style: TextStyle(
                     color: abuMuted,
                     fontSize: 9,
@@ -222,9 +223,10 @@ class _Header extends StatelessWidget {
 }
 
 class _ExamCard extends StatelessWidget {
-  const _ExamCard({required this.exam, required this.onProceed});
+  const _ExamCard({required this.exam, required this.onStart});
+
   final CenterExam exam;
-  final VoidCallback onProceed;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -252,12 +254,12 @@ class _ExamCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(7),
             ),
             child: const Text(
-              'ACTIVE NOW',
+              'CURRENT EXAMINATION · ACTIVE',
               style: TextStyle(
                 color: abuGreen,
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
+                letterSpacing: 1.1,
               ),
             ),
           ),
@@ -283,7 +285,6 @@ class _ExamCard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           const Divider(color: abuLine),
-          const SizedBox(height: 8),
           _Info(Icons.timer_outlined, 'Duration', '${exam.durationMinutes} minutes'),
           _Info(Icons.quiz_outlined, 'Questions', '${exam.questions.length}'),
           _Info(Icons.location_on_outlined, 'Examination hall', exam.venue),
@@ -291,13 +292,18 @@ class _ExamCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: onProceed,
-              icon: const Icon(Icons.arrow_forward_rounded),
+              onPressed: onStart,
+              icon: const Icon(Icons.play_arrow_rounded),
               label: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 13),
-                child: Text('PROCEED TO EXAMINATION'),
+                child: Text('START EXAMINATION PROCESS'),
               ),
             ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'The timer does not start here. You will first confirm your candidate details, read the instructions and authenticate your fingerprint.',
+            style: TextStyle(color: abuMuted, fontSize: 10, height: 1.55),
           ),
         ],
       ),
@@ -305,20 +311,24 @@ class _ExamCard extends StatelessWidget {
   }
 }
 
-class _CandidateCard extends StatelessWidget {
-  const _CandidateCard({
+class _CandidateRecordCard extends StatelessWidget {
+  const _CandidateRecordCard({
     required this.name,
     required this.registrationNumber,
     required this.department,
     required this.level,
-    this.photoAsset,
+    required this.programme,
+    required this.photoAsset,
+    required this.onDeviceRegistration,
   });
 
   final String name;
   final String registrationNumber;
   final String department;
   final String level;
+  final String programme;
   final String? photoAsset;
+  final VoidCallback onDeviceRegistration;
 
   @override
   Widget build(BuildContext context) {
@@ -333,7 +343,7 @@ class _CandidateCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'CANDIDATE VERIFIED',
+            'CANDIDATE RECORD',
             style: TextStyle(
               color: abuGreen,
               fontWeight: FontWeight.w800,
@@ -347,7 +357,8 @@ class _CandidateCard extends StatelessWidget {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: const Color(0xFFEAF1E8),
-                backgroundImage: photoAsset == null ? null : AssetImage(photoAsset!),
+                backgroundImage:
+                    photoAsset == null ? null : AssetImage(photoAsset!),
                 child: photoAsset == null
                     ? const Icon(Icons.person_outline, color: abuGreen)
                     : null,
@@ -378,10 +389,20 @@ class _CandidateCard extends StatelessWidget {
           const Divider(color: abuLine),
           _Info(Icons.school_outlined, 'Department', department),
           _Info(Icons.layers_outlined, 'Level', level),
-          const SizedBox(height: 10),
+          _Info(Icons.badge_outlined, 'Programme', programme),
+          const SizedBox(height: 12),
           const Text(
-            'Identity verification is complete. Examination activity is monitored and recorded for invigilator review.',
+            'This information is loaded from the university examination records. Final identity authentication is performed by fingerprint immediately before the examination opens.',
             style: TextStyle(color: abuMuted, fontSize: 11, height: 1.6),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onDeviceRegistration,
+              icon: const Icon(Icons.computer_rounded, size: 17),
+              label: const Text('Device registration'),
+            ),
           ),
         ],
       ),
@@ -389,8 +410,8 @@ class _CandidateCard extends StatelessWidget {
   }
 }
 
-class _SecurityNotice extends StatelessWidget {
-  const _SecurityNotice();
+class _FlowNotice extends StatelessWidget {
+  const _FlowNotice();
 
   @override
   Widget build(BuildContext context) {
@@ -404,11 +425,11 @@ class _SecurityNotice extends StatelessWidget {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.verified_user_outlined, color: abuGreen, size: 20),
+          Icon(Icons.security_rounded, color: abuGreen, size: 20),
           SizedBox(width: 12),
           Expanded(
             child: Text(
-              'This portal intentionally shows only the examination currently authorised for this candidate. Contact an invigilator if the displayed course is not correct.',
+              'Access sequence: candidate record confirmation → examination instructions → fingerprint authentication → secure examination. The exam timer begins only after successful fingerprint authentication.',
               style: TextStyle(color: abuInk, fontSize: 12, height: 1.6),
             ),
           ),
@@ -452,6 +473,7 @@ class _NoExamCard extends StatelessWidget {
 
 class _Info extends StatelessWidget {
   const _Info(this.icon, this.label, this.value);
+
   final IconData icon;
   final String label;
   final String value;
