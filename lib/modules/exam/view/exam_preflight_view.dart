@@ -16,7 +16,6 @@ CenterExam? currentExamArgument() {
 class ExamPreflightView extends StatefulWidget {
   const ExamPreflightView({super.key, this.confirmation = false});
 
-  /// true = candidate/exam record confirmation; false = examination rules.
   final bool confirmation;
 
   @override
@@ -61,8 +60,7 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                       Get.offAllNamed(Routes.centerPortal),
                                 )
                               : Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
                                     _StepBar(
                                       verificationActive: widget.confirmation,
@@ -71,8 +69,8 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                     const SizedBox(height: 28),
                                     Text(
                                       widget.confirmation
-                                          ? 'Verify your candidate and examination record'
-                                          : 'Read the official examination instructions',
+                                          ? 'Candidate Verification'
+                                          : 'Examination Instructions',
                                       style: const TextStyle(
                                         color: abuInk,
                                         fontSize: 30,
@@ -80,18 +78,7 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                         letterSpacing: -0.8,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      widget.confirmation
-                                          ? 'Confirm that the university record shown below belongs to you and that the current examination is correct.'
-                                          : 'Read these rules carefully. Fingerprint authentication is the final step after this page; the examination timer has not started yet.',
-                                      style: const TextStyle(
-                                        color: abuMuted,
-                                        fontSize: 13,
-                                        height: 1.6,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 26),
+                                    const SizedBox(height: 24),
                                     LayoutBuilder(
                                       builder: (context, constraints) {
                                         final wide = constraints.maxWidth >= 780;
@@ -211,7 +198,7 @@ class _Header extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$courseCode · EXAMINATION ACCESS',
+                  '$courseCode · SECURE CBT EXAMINATION',
                   style: const TextStyle(
                     color: abuMuted,
                     fontSize: 9,
@@ -220,22 +207,6 @@ class _Header extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F2EB),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: const Text(
-              'OFFICIAL EXAM',
-              style: TextStyle(
-                color: abuGreen,
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.1,
-              ),
             ),
           ),
         ],
@@ -255,53 +226,42 @@ class _StepBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _Step(
-            number: '1',
-            label: 'Candidate details',
-            active: verificationActive,
-            complete: instructionsActive,
-          ),
-          const _StepDivider(),
-          _Step(
-            number: '2',
-            label: 'Instructions',
-            active: instructionsActive,
-            complete: false,
-          ),
-          const _StepDivider(),
-          const _Step(
-            number: '3',
-            label: 'Fingerprint',
-            active: false,
-            complete: false,
-          ),
-          const _StepDivider(),
-          const _Step(
-            number: '4',
-            label: 'Examination',
-            active: false,
-            complete: false,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepDivider extends StatelessWidget {
-  const _StepDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 62,
-      height: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      color: abuLine,
+    return Row(
+      children: [
+        _Step(
+          number: '1',
+          label: 'Verification',
+          active: verificationActive,
+          complete: instructionsActive,
+        ),
+        const Expanded(
+          child: Divider(color: abuLine, indent: 10, endIndent: 10),
+        ),
+        _Step(
+          number: '2',
+          label: 'Instructions',
+          active: instructionsActive,
+          complete: false,
+        ),
+        const Expanded(
+          child: Divider(color: abuLine, indent: 10, endIndent: 10),
+        ),
+        const _Step(
+          number: '3',
+          label: 'Fingerprint',
+          active: false,
+          complete: false,
+        ),
+        const Expanded(
+          child: Divider(color: abuLine, indent: 10, endIndent: 10),
+        ),
+        const _Step(
+          number: '4',
+          label: 'Examination',
+          active: false,
+          complete: false,
+        ),
+      ],
     );
   }
 }
@@ -381,52 +341,25 @@ class _VerificationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'University candidate record',
+            'Candidate Details',
             style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'These details are supplied by the university. Students cannot create or edit this record from the examination portal.',
-            style: TextStyle(color: abuMuted, fontSize: 11, height: 1.6),
-          ),
           const SizedBox(height: 22),
-          _Detail('Candidate name', candidateName),
+          _Detail('Name', candidateName),
           _Detail('Registration number', registrationNumber),
           _Detail('Department', department),
           _Detail('Level', level),
           _Detail('Programme', programme),
           _Detail('Course', '${exam.courseCode} · ${exam.courseTitle}'),
-          _Detail('Venue', exam.venue),
           const SizedBox(height: 18),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFDCE7DD)),
-            ),
-            child: CheckboxListTile(
-              value: confirmed,
-              controlAffinity: ListTileControlAffinity.leading,
-              onChanged: (value) => onChanged(value ?? false),
-              title: const Text(
-                'I confirm that the candidate and examination details displayed are correct.',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  height: 1.45,
-                ),
-              ),
-              subtitle: const Padding(
-                padding: EdgeInsets.only(top: 5),
-                child: Text(
-                  'This does not start the examination timer. Fingerprint authentication is still required before the exam opens.',
-                  style: TextStyle(
-                    color: abuMuted,
-                    fontSize: 11,
-                    height: 1.5,
-                  ),
-                ),
-              ),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: confirmed,
+            controlAffinity: ListTileControlAffinity.leading,
+            onChanged: (value) => onChanged(value ?? false),
+            title: const Text(
+              'I confirm that the details above are correct.',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
             ),
           ),
         ],
@@ -444,32 +377,32 @@ class _InstructionCard extends StatelessWidget {
       (
         Icons.person_outline_rounded,
         'Candidate identity',
-        'Only the authorised candidate may sit the examination. Remain at your assigned workstation and seat throughout the session.',
-      ),
-      (
-        Icons.visibility_outlined,
-        'Integrity monitoring',
-        'Camera, workstation and examination-integrity signals may be monitored. Alerts are reviewed by authorised invigilators.',
+        'Only the authorised candidate may sit this examination.',
       ),
       (
         Icons.devices_other_outlined,
         'Unauthorised devices',
-        'Do not use phones, external storage, secondary devices or unauthorised materials during the examination.',
+        'Phones, external storage and unauthorised materials are prohibited.',
+      ),
+      (
+        Icons.visibility_outlined,
+        'Examination monitoring',
+        'Camera and workstation integrity monitoring remain active during the examination.',
       ),
       (
         Icons.timer_outlined,
         'Time control',
-        'The examination is timed. The timer starts only after successful fingerprint authentication opens the examination screen.',
+        'The examination is timed and submits automatically when time expires.',
       ),
       (
-        Icons.save_outlined,
-        'Answer retention',
-        'Responses are retained during the examination. Review flagged or unanswered questions before final submission.',
+        Icons.flag_outlined,
+        'Question review',
+        'Flag questions for review and complete all required responses before submission.',
       ),
       (
         Icons.support_agent_outlined,
-        'Technical issue',
-        'If you experience a workstation, camera, fingerprint-reader or network problem, remain seated and signal the invigilator.',
+        'Technical assistance',
+        'Remain seated and call the invigilator if assistance is required.',
       ),
     ];
 
@@ -478,7 +411,7 @@ class _InstructionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Examination rules',
+            'Examination Rules',
             style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 22),
@@ -514,7 +447,7 @@ class _InstructionCard extends StatelessWidget {
                           style: const TextStyle(
                             color: abuMuted,
                             fontSize: 12,
-                            height: 1.65,
+                            height: 1.55,
                           ),
                         ),
                       ],
@@ -573,25 +506,6 @@ class _ExamSummaryCard extends StatelessWidget {
           _Detail('Duration', '${exam.durationMinutes} minutes'),
           _Detail('Questions', '${exam.questions.length}'),
           _Detail('Venue', exam.venue),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF4E6),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFF1D3A7)),
-            ),
-            child: const Text(
-              'The examination remains locked until the final fingerprint step is completed successfully.',
-              style: TextStyle(
-                color: Color(0xFF8A5B18),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                height: 1.5,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -613,27 +527,18 @@ class _ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 14,
-      runSpacing: 12,
+    return Row(
       children: [
         OutlinedButton.icon(
           onPressed: onBack,
           icon: const Icon(Icons.arrow_back_rounded, size: 17),
-          label: Text(
-            verification ? 'Back to dashboard' : 'Back to candidate details',
-          ),
+          label: const Text('Back'),
         ),
+        const Spacer(),
         FilledButton.icon(
           onPressed: enabled ? onNext : null,
           icon: const Icon(Icons.arrow_forward_rounded, size: 17),
-          label: Text(
-            verification
-                ? 'CONTINUE TO INSTRUCTIONS'
-                : 'PROCEED TO FINGERPRINT',
-          ),
+          label: Text(verification ? 'Continue' : 'Fingerprint'),
         ),
       ],
     );
@@ -673,10 +578,10 @@ class _Detail extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 145,
+            width: 130,
             child: Text(
               label,
-              style: const TextStyle(color: abuMuted, fontSize: 11),
+              style: const TextStyle(color: abuMuted, fontSize: 12),
             ),
           ),
           Expanded(
@@ -684,7 +589,7 @@ class _Detail extends StatelessWidget {
               value,
               style: const TextStyle(
                 color: abuInk,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -705,17 +610,11 @@ class _MissingExam extends StatelessWidget {
     return _Card(
       child: Column(
         children: [
-          const Icon(Icons.event_busy_outlined, color: abuMuted, size: 42),
+          const Icon(Icons.assignment_late_outlined, color: abuMuted, size: 42),
           const SizedBox(height: 14),
           const Text(
-            'Examination session unavailable',
+            'Examination unavailable',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Return to the examination dashboard and select the current examination again.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: abuMuted, height: 1.6),
           ),
           const SizedBox(height: 18),
           FilledButton(
