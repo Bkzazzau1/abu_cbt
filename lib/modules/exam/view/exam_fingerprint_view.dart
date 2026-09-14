@@ -24,7 +24,9 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
   CenterExam? get exam {
     final arg = Get.arguments;
     if (arg is CenterExam) return arg;
-    if (arg is Map && arg['exam'] is CenterExam) return arg['exam'] as CenterExam;
+    if (arg is Map && arg['exam'] is CenterExam) {
+      return arg['exam'] as CenterExam;
+    }
     return null;
   }
 
@@ -106,18 +108,7 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
                                   level: candidate.level,
                                   scanning: scanning,
                                   result: result,
-                                  reader: reader,
                                   onScan: scanAndOpenExam,
-                                  onDemoOutcomeChanged: (outcome) {
-                                    if (reader is DemoFingerprintReader &&
-                                        !scanning) {
-                                      setState(() {
-                                        (reader as DemoFingerprintReader)
-                                            .outcome = outcome;
-                                        result = null;
-                                      });
-                                    }
-                                  },
                                 ),
                         ),
                       ),
@@ -169,7 +160,7 @@ class _Header extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$courseCode · FINAL EXAM ACCESS',
+                  '$courseCode · FINGERPRINT AUTHENTICATION',
                   style: const TextStyle(
                     color: abuMuted,
                     fontSize: 9,
@@ -178,22 +169,6 @@ class _Header extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF2DF),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: const Text(
-              'FINGERPRINT REQUIRED',
-              style: TextStyle(
-                color: Color(0xFF8A5B18),
-                fontSize: 9,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
-              ),
             ),
           ),
         ],
@@ -211,9 +186,7 @@ class _FingerprintCard extends StatelessWidget {
     required this.level,
     required this.scanning,
     required this.result,
-    required this.reader,
     required this.onScan,
-    required this.onDemoOutcomeChanged,
   });
 
   final CenterExam exam;
@@ -223,9 +196,7 @@ class _FingerprintCard extends StatelessWidget {
   final String level;
   final bool scanning;
   final FingerprintResult? result;
-  final FingerprintReader reader;
   final VoidCallback onScan;
-  final ValueChanged<FingerprintResult> onDemoOutcomeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -233,15 +204,15 @@ class _FingerprintCard extends StatelessWidget {
     final failed = result == FingerprintResult.notMatched;
     final unavailable = result == FingerprintResult.unavailable;
 
-    final message = scanning
+    final status = scanning
         ? 'Reading fingerprint…'
         : matched
-        ? 'Fingerprint matched. Opening examination…'
+        ? 'Fingerprint matched'
         : failed
-        ? 'Fingerprint did not match the candidate record. Please try again or call an invigilator.'
+        ? 'Fingerprint did not match'
         : unavailable
-        ? 'Fingerprint reader is unavailable. Please call an invigilator.'
-        : 'Place your enrolled finger on the fingerprint reader. A successful match unlocks the examination and starts the timer.';
+        ? 'Fingerprint reader unavailable'
+        : 'Place your finger on the reader';
 
     return Container(
       padding: const EdgeInsets.all(30),
@@ -261,33 +232,16 @@ class _FingerprintCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'FINAL IDENTITY AUTHENTICATION',
+            'FINGERPRINT AUTHENTICATION',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: abuGreen,
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
-              letterSpacing: 1.8,
+              letterSpacing: 1.7,
             ),
           ),
-          const SizedBox(height: 10),
-          const Text(
-            'Authenticate fingerprint to enter examination',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: abuInk,
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'This is the final access control. The examination screen remains locked until the enrolled fingerprint is matched.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: abuMuted, fontSize: 12, height: 1.6),
-          ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -304,11 +258,11 @@ class _FingerprintCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 30),
           Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              padding: const EdgeInsets.all(28),
+              padding: const EdgeInsets.all(30),
               decoration: BoxDecoration(
                 color: matched
                     ? const Color(0xFFE8F2EB)
@@ -323,14 +277,14 @@ class _FingerprintCard extends StatelessWidget {
                     : failed
                     ? Icons.error_outline_rounded
                     : unavailable
-                    ? Icons.portable_wifi_off_rounded
+                    ? Icons.sensors_off_rounded
                     : Icons.fingerprint_rounded,
                 color: matched
                     ? abuGreen
                     : failed || unavailable
                     ? const Color(0xFFB33D35)
                     : abuGreen,
-                size: 82,
+                size: 84,
               ),
             ),
           ),
@@ -342,12 +296,13 @@ class _FingerprintCard extends StatelessWidget {
           Semantics(
             liveRegion: true,
             child: Text(
-              message,
+              status,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: failed || unavailable ? const Color(0xFFB33D35) : abuInk,
+                color: failed || unavailable
+                    ? const Color(0xFFB33D35)
+                    : abuInk,
                 fontSize: 13,
-                height: 1.65,
                 fontWeight: matched ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -362,55 +317,11 @@ class _FingerprintCard extends StatelessWidget {
                 scanning
                     ? 'AUTHENTICATING…'
                     : result == null
-                    ? 'AUTHENTICATE FINGERPRINT'
-                    : 'RETRY FINGERPRINT',
+                    ? 'AUTHENTICATE'
+                    : 'RETRY',
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          const Text(
-            'The official examination timer starts only after successful fingerprint authentication and the examination screen opens.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: abuMuted, fontSize: 10, height: 1.55),
-          ),
-          if (reader is DemoFingerprintReader) ...[
-            const SizedBox(height: 18),
-            const Divider(color: abuLine),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: const Text(
-                'Demonstration reader controls',
-                style: TextStyle(fontSize: 11, color: abuMuted),
-              ),
-              subtitle: const Text(
-                'Presentation simulation only; no biometric sample is stored.',
-                style: TextStyle(fontSize: 10, color: abuMuted),
-              ),
-              children: FingerprintResult.values
-                  .map(
-                    (value) => RadioListTile<FingerprintResult>(
-                      value: value,
-                      groupValue: (reader as DemoFingerprintReader).outcome,
-                      onChanged: scanning
-                          ? null
-                          : (selected) {
-                              if (selected != null) {
-                                onDemoOutcomeChanged(selected);
-                              }
-                            },
-                      title: Text(
-                        switch (value) {
-                          FingerprintResult.matched => 'Match',
-                          FingerprintResult.notMatched => 'No match',
-                          FingerprintResult.unavailable => 'Reader unavailable',
-                        },
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
         ],
       ),
     );
@@ -474,12 +385,6 @@ class _MissingSession extends StatelessWidget {
           const Text(
             'Examination session unavailable',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Return to the current examination dashboard and start the examination again.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: abuMuted, height: 1.6),
           ),
           const SizedBox(height: 18),
           FilledButton(
