@@ -16,6 +16,7 @@ CenterExam? currentExamArgument() {
 class ExamPreflightView extends StatefulWidget {
   const ExamPreflightView({super.key, this.confirmation = false});
 
+  /// true = candidate/exam record confirmation; false = examination rules.
   final bool confirmation;
 
   @override
@@ -40,7 +41,7 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
           fit: StackFit.expand,
           children: [
             Image.asset('assets/senate.png', fit: BoxFit.cover),
-            Container(color: abuCanvas.withValues(alpha: 0.9)),
+            Container(color: abuCanvas.withValues(alpha: 0.90)),
             SafeArea(
               child: Column(
                 children: [
@@ -55,16 +56,23 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 1050),
                           child: exam == null
-                              ? _MissingExam(onReturn: () => Get.offAllNamed(Routes.centerPortal))
+                              ? _MissingExam(
+                                  onReturn: () =>
+                                      Get.offAllNamed(Routes.centerPortal),
+                                )
                               : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                    _StepBar(confirmation: widget.confirmation),
+                                    _StepBar(
+                                      verificationActive: widget.confirmation,
+                                      instructionsActive: !widget.confirmation,
+                                    ),
                                     const SizedBox(height: 28),
                                     Text(
                                       widget.confirmation
-                                          ? 'Confirm candidate and examination details'
-                                          : 'Official examination instructions',
+                                          ? 'Verify your candidate and examination record'
+                                          : 'Read the official examination instructions',
                                       style: const TextStyle(
                                         color: abuInk,
                                         fontSize: 30,
@@ -75,8 +83,8 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                     const SizedBox(height: 8),
                                     Text(
                                       widget.confirmation
-                                          ? 'Your examination timer starts immediately after you select Begin Examination.'
-                                          : 'Read the instructions carefully. This is an official timed examination and all examination rules apply.',
+                                          ? 'Confirm that the university record shown below belongs to you and that the current examination is correct.'
+                                          : 'Read these rules carefully. Fingerprint authentication is the final step after this page; the examination timer has not started yet.',
                                       style: const TextStyle(
                                         color: abuMuted,
                                         fontSize: 13,
@@ -88,17 +96,28 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                       builder: (context, constraints) {
                                         final wide = constraints.maxWidth >= 780;
                                         final main = widget.confirmation
-                                            ? _ConfirmationCard(
-                                                candidateName: candidate?.fullName ?? 'Candidate',
-                                                registrationNumber: candidate?.registrationNumber ?? '--',
-                                                department: candidate?.department ?? '--',
+                                            ? _VerificationCard(
+                                                candidateName:
+                                                    candidate?.fullName ??
+                                                    'Candidate',
+                                                registrationNumber: candidate
+                                                        ?.registrationNumber ??
+                                                    '--',
+                                                department:
+                                                    candidate?.department ?? '--',
                                                 level: candidate?.level ?? '--',
+                                                programme:
+                                                    candidate?.programme ?? '--',
                                                 exam: exam,
                                                 confirmed: confirmed,
-                                                onChanged: (value) => setState(() => confirmed = value),
+                                                onChanged: (value) => setState(
+                                                  () => confirmed = value,
+                                                ),
                                               )
                                             : const _InstructionCard();
-                                        final examCard = _ExamSummaryCard(exam: exam);
+                                        final examCard =
+                                            _ExamSummaryCard(exam: exam);
+
                                         if (!wide) {
                                           return Column(
                                             children: [
@@ -108,8 +127,10 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                             ],
                                           );
                                         }
+
                                         return Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Expanded(flex: 3, child: main),
                                             const SizedBox(width: 22),
@@ -120,14 +141,21 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
                                     ),
                                     const SizedBox(height: 22),
                                     _ActionBar(
-                                      confirmation: widget.confirmation,
-                                      enabled: !widget.confirmation || confirmed,
+                                      verification: widget.confirmation,
+                                      enabled:
+                                          !widget.confirmation || confirmed,
                                       onBack: () => Get.back(),
                                       onNext: () {
                                         if (widget.confirmation) {
-                                          Get.offNamed(Routes.centerExamRun, arguments: exam);
+                                          Get.toNamed(
+                                            Routes.centerExamInstruction,
+                                            arguments: exam,
+                                          );
                                         } else {
-                                          Get.toNamed(Routes.centerExamConfirmation, arguments: exam);
+                                          Get.toNamed(
+                                            Routes.centerExamFingerprint,
+                                            arguments: exam,
+                                          );
                                         }
                                       },
                                     ),
@@ -149,6 +177,7 @@ class _ExamPreflightViewState extends State<ExamPreflightView> {
 
 class _Header extends StatelessWidget {
   const _Header({required this.courseCode, required this.onBack});
+
   final String courseCode;
   final VoidCallback onBack;
 
@@ -182,7 +211,7 @@ class _Header extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$courseCode · SECURE CBT EXAMINATION',
+                  '$courseCode · EXAMINATION ACCESS',
                   style: const TextStyle(
                     color: abuMuted,
                     fontSize: 9,
@@ -216,25 +245,75 @@ class _Header extends StatelessWidget {
 }
 
 class _StepBar extends StatelessWidget {
-  const _StepBar({required this.confirmation});
-  final bool confirmation;
+  const _StepBar({
+    required this.verificationActive,
+    required this.instructionsActive,
+  });
+
+  final bool verificationActive;
+  final bool instructionsActive;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _Step(number: '1', label: 'Instructions', active: !confirmation, complete: confirmation),
-        const Expanded(child: Divider(color: abuLine, indent: 10, endIndent: 10)),
-        _Step(number: '2', label: 'Confirmation', active: confirmation, complete: false),
-        const Expanded(child: Divider(color: abuLine, indent: 10, endIndent: 10)),
-        const _Step(number: '3', label: 'Examination', active: false, complete: false),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _Step(
+            number: '1',
+            label: 'Candidate details',
+            active: verificationActive,
+            complete: instructionsActive,
+          ),
+          const _StepDivider(),
+          _Step(
+            number: '2',
+            label: 'Instructions',
+            active: instructionsActive,
+            complete: false,
+          ),
+          const _StepDivider(),
+          const _Step(
+            number: '3',
+            label: 'Fingerprint',
+            active: false,
+            complete: false,
+          ),
+          const _StepDivider(),
+          const _Step(
+            number: '4',
+            label: 'Examination',
+            active: false,
+            complete: false,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepDivider extends StatelessWidget {
+  const _StepDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 62,
+      height: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      color: abuLine,
     );
   }
 }
 
 class _Step extends StatelessWidget {
-  const _Step({required this.number, required this.label, required this.active, required this.complete});
+  const _Step({
+    required this.number,
+    required this.label,
+    required this.active,
+    required this.complete,
+  });
+
   final String number;
   final String label;
   final bool active;
@@ -247,7 +326,8 @@ class _Step extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 14,
-          backgroundColor: active || complete ? abuGreen : const Color(0xFFE4E8E5),
+          backgroundColor:
+              active || complete ? abuGreen : const Color(0xFFE4E8E5),
           child: complete
               ? const Icon(Icons.check, color: Colors.white, size: 15)
               : Text(
@@ -273,6 +353,88 @@ class _Step extends StatelessWidget {
   }
 }
 
+class _VerificationCard extends StatelessWidget {
+  const _VerificationCard({
+    required this.candidateName,
+    required this.registrationNumber,
+    required this.department,
+    required this.level,
+    required this.programme,
+    required this.exam,
+    required this.confirmed,
+    required this.onChanged,
+  });
+
+  final String candidateName;
+  final String registrationNumber;
+  final String department;
+  final String level;
+  final String programme;
+  final CenterExam exam;
+  final bool confirmed;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'University candidate record',
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'These details are supplied by the university. Students cannot create or edit this record from the examination portal.',
+            style: TextStyle(color: abuMuted, fontSize: 11, height: 1.6),
+          ),
+          const SizedBox(height: 22),
+          _Detail('Candidate name', candidateName),
+          _Detail('Registration number', registrationNumber),
+          _Detail('Department', department),
+          _Detail('Level', level),
+          _Detail('Programme', programme),
+          _Detail('Course', '${exam.courseCode} · ${exam.courseTitle}'),
+          _Detail('Venue', exam.venue),
+          const SizedBox(height: 18),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFDCE7DD)),
+            ),
+            child: CheckboxListTile(
+              value: confirmed,
+              controlAffinity: ListTileControlAffinity.leading,
+              onChanged: (value) => onChanged(value ?? false),
+              title: const Text(
+                'I confirm that the candidate and examination details displayed are correct.',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  height: 1.45,
+                ),
+              ),
+              subtitle: const Padding(
+                padding: EdgeInsets.only(top: 5),
+                child: Text(
+                  'This does not start the examination timer. Fingerprint authentication is still required before the exam opens.',
+                  style: TextStyle(
+                    color: abuMuted,
+                    fontSize: 11,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InstructionCard extends StatelessWidget {
   const _InstructionCard();
 
@@ -282,7 +444,7 @@ class _InstructionCard extends StatelessWidget {
       (
         Icons.person_outline_rounded,
         'Candidate identity',
-        'Only the verified candidate may sit this examination. Remain at your assigned workstation and seat throughout the session.',
+        'Only the authorised candidate may sit the examination. Remain at your assigned workstation and seat throughout the session.',
       ),
       (
         Icons.visibility_outlined,
@@ -292,22 +454,22 @@ class _InstructionCard extends StatelessWidget {
       (
         Icons.devices_other_outlined,
         'Unauthorised devices',
-        'Do not use phones, external storage, secondary devices or any unauthorised material during the examination.',
+        'Do not use phones, external storage, secondary devices or unauthorised materials during the examination.',
       ),
       (
         Icons.timer_outlined,
         'Time control',
-        'The examination is timed. The system may submit automatically when the authorised duration expires.',
+        'The examination is timed. The timer starts only after successful fingerprint authentication opens the examination screen.',
       ),
       (
         Icons.save_outlined,
         'Answer retention',
-        'Your responses are retained during the examination. Review flagged or unanswered questions before final submission.',
+        'Responses are retained during the examination. Review flagged or unanswered questions before final submission.',
       ),
       (
         Icons.support_agent_outlined,
         'Technical issue',
-        'If you experience a workstation, camera or network problem, remain seated and signal the invigilator immediately.',
+        'If you experience a workstation, camera, fingerprint-reader or network problem, remain seated and signal the invigilator.',
       ),
     ];
 
@@ -341,12 +503,19 @@ class _InstructionCard extends StatelessWidget {
                       children: [
                         Text(
                           rule.$2,
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 5),
                         Text(
                           rule.$3,
-                          style: const TextStyle(color: abuMuted, fontSize: 12, height: 1.65),
+                          style: const TextStyle(
+                            color: abuMuted,
+                            fontSize: 12,
+                            height: 1.65,
+                          ),
                         ),
                       ],
                     ),
@@ -361,74 +530,9 @@ class _InstructionCard extends StatelessWidget {
   }
 }
 
-class _ConfirmationCard extends StatelessWidget {
-  const _ConfirmationCard({
-    required this.candidateName,
-    required this.registrationNumber,
-    required this.department,
-    required this.level,
-    required this.exam,
-    required this.confirmed,
-    required this.onChanged,
-  });
-
-  final String candidateName;
-  final String registrationNumber;
-  final String department;
-  final String level;
-  final CenterExam exam;
-  final bool confirmed;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Candidate confirmation',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 22),
-          _Detail('Candidate name', candidateName),
-          _Detail('Registration number', registrationNumber),
-          _Detail('Department', department),
-          _Detail('Level', level),
-          _Detail('Course', '${exam.courseCode} · ${exam.courseTitle}'),
-          _Detail('Duration', '${exam.durationMinutes} minutes'),
-          const SizedBox(height: 18),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFDCE7DD)),
-            ),
-            child: CheckboxListTile(
-              value: confirmed,
-              controlAffinity: ListTileControlAffinity.leading,
-              onChanged: (value) => onChanged(value ?? false),
-              title: const Text(
-                'I confirm that these details are mine and I am ready to begin this official examination.',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, height: 1.45),
-              ),
-              subtitle: const Padding(
-                padding: EdgeInsets.only(top: 5),
-                child: Text(
-                  'Selecting Begin Examination starts the official timer and examination monitoring.',
-                  style: TextStyle(color: abuMuted, fontSize: 11, height: 1.5),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ExamSummaryCard extends StatelessWidget {
   const _ExamSummaryCard({required this.exam});
+
   final CenterExam exam;
 
   @override
@@ -449,12 +553,20 @@ class _ExamSummaryCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             exam.courseCode,
-            style: const TextStyle(color: abuGreen, fontWeight: FontWeight.w800, fontSize: 14),
+            style: const TextStyle(
+              color: abuGreen,
+              fontWeight: FontWeight.w800,
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 5),
           Text(
             exam.courseTitle,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22, height: 1.25),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              height: 1.25,
+            ),
           ),
           const SizedBox(height: 20),
           const Divider(color: abuLine),
@@ -471,8 +583,13 @@ class _ExamSummaryCard extends StatelessWidget {
               border: Border.all(color: const Color(0xFFF1D3A7)),
             ),
             child: const Text(
-              'Do not close, refresh or leave the examination application after the timer starts.',
-              style: TextStyle(color: Color(0xFF8A5B18), fontSize: 11, fontWeight: FontWeight.w700, height: 1.5),
+              'The examination remains locked until the final fingerprint step is completed successfully.',
+              style: TextStyle(
+                color: Color(0xFF8A5B18),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -483,13 +600,13 @@ class _ExamSummaryCard extends StatelessWidget {
 
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
-    required this.confirmation,
+    required this.verification,
     required this.enabled,
     required this.onBack,
     required this.onNext,
   });
 
-  final bool confirmation;
+  final bool verification;
   final bool enabled;
   final VoidCallback onBack;
   final VoidCallback onNext;
@@ -505,14 +622,17 @@ class _ActionBar extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: onBack,
           icon: const Icon(Icons.arrow_back_rounded, size: 17),
-          label: Text(confirmation ? 'Back to instructions' : 'Back to current exam'),
+          label: Text(
+            verification ? 'Back to dashboard' : 'Back to candidate details',
+          ),
         ),
         FilledButton.icon(
           onPressed: enabled ? onNext : null,
-          icon: Icon(confirmation ? Icons.play_arrow_rounded : Icons.arrow_forward_rounded),
-          label: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 11),
-            child: Text(confirmation ? 'BEGIN EXAMINATION' : 'CONTINUE TO CONFIRMATION'),
+          icon: const Icon(Icons.arrow_forward_rounded, size: 17),
+          label: Text(
+            verification
+                ? 'CONTINUE TO INSTRUCTIONS'
+                : 'PROCEED TO FINGERPRINT',
           ),
         ),
       ],
@@ -522,19 +642,17 @@ class _ActionBar extends StatelessWidget {
 
 class _Card extends StatelessWidget {
   const _Card({required this.child});
+
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: abuLine),
-        boxShadow: const [
-          BoxShadow(color: Color(0x0C000000), blurRadius: 22, offset: Offset(0, 8)),
-        ],
       ),
       child: child,
     );
@@ -543,24 +661,32 @@ class _Card extends StatelessWidget {
 
 class _Detail extends StatelessWidget {
   const _Detail(this.label, this.value);
+
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 132,
-            child: Text(label, style: const TextStyle(color: abuMuted, fontSize: 12)),
+            width: 145,
+            child: Text(
+              label,
+              style: const TextStyle(color: abuMuted, fontSize: 11),
+            ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+              style: const TextStyle(
+                color: abuInk,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -571,6 +697,7 @@ class _Detail extends StatelessWidget {
 
 class _MissingExam extends StatelessWidget {
   const _MissingExam({required this.onReturn});
+
   final VoidCallback onReturn;
 
   @override
@@ -578,20 +705,23 @@ class _MissingExam extends StatelessWidget {
     return _Card(
       child: Column(
         children: [
-          const Icon(Icons.warning_amber_rounded, color: Color(0xFFB07500), size: 42),
+          const Icon(Icons.event_busy_outlined, color: abuMuted, size: 42),
           const SizedBox(height: 14),
           const Text(
-            'No examination was loaded',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+            'Examination session unavailable',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Return to the examination portal and ask an invigilator for assistance if the issue continues.',
+            'Return to the examination dashboard and select the current examination again.',
             textAlign: TextAlign.center,
             style: TextStyle(color: abuMuted, height: 1.6),
           ),
           const SizedBox(height: 18),
-          FilledButton(onPressed: onReturn, child: const Text('RETURN TO EXAMINATION PORTAL')),
+          FilledButton(
+            onPressed: onReturn,
+            child: const Text('Return to dashboard'),
+          ),
         ],
       ),
     );
