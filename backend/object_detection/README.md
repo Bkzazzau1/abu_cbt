@@ -1,4 +1,4 @@
-# Local object detection
+# Local object detection, identity snapshot and voice-activity checks
 
 Python runs YOLO11 nano on CPU, filtering its COCO `cell phone` class. OpenCV
 holds only the newest camera frame; inference samples every three seconds. Two
@@ -10,11 +10,42 @@ Phones out of view, concealed objects and poor lighting may be missed.
 Flutter starts/stops the worker with the exam and shows camera status. It sends
 timestamped flags through the existing Rust heartbeat backend to invigilator
 risk details and keeps a bounded local audit under `objects.audit.*`. Review is
-manual. Detector frames are neither saved nor uploaded. There is no face matching
-or audio capture; the separate three-photo review feature is not part of this worker.
+manual. Detector frames are neither saved nor uploaded.
 
 Rust continues to own USB notification memory and backend presence state. Python
-owns the model and camera buffers. No Go camera gateway is required.
+owns the model, camera and microphone buffers. No Go camera gateway is required.
+
+## Identity snapshot check (impersonation)
+
+When Flutter passes `--reference-photo`, the worker detects the largest face in
+that enrolled photo once at startup (OpenCV Haar cascade) and trains an LBPH
+face recognizer on it — a lightweight, fully local/offline technique, not a
+deep embedding model. At three random points within the middle 10%-90% of the
+exam window (`IdentitySchedule`, spaced apart so checks don't cluster), it
+grabs the current camera frame, detects a face, and compares it against the
+reference. A mismatch above the distance threshold emits an `identity` flag
+through the same risk-details path as phone detection; a match, or no face
+found in that frame, emits nothing (a missed frame due to camera angle isn't
+evidence of anything). The distance threshold (75.0) is an initial estimate
+needing hall validation, exactly like the phone-detection confidence threshold
+— this is a coarse single-reference-photo comparison, not proof of identity.
+No frame is ever saved; only the enrolled photo (already bundled with the app)
+and the momentary comparison result exist.
+
+## Voice-activity check ("elevated talking near this seat")
+
+An optional microphone thread (`sounddevice`) classifies ~30ms blocks of audio
+as above/below an amplitude threshold and immediately discards each block —
+**no audio is ever recorded, stored, buffered beyond the rolling classification
+window, or transcribed.** This is an amplitude heuristic, not speech
+recognition: it has no way to know what was said, by whom, or whether it was
+exam-related. When the speech-like ratio over a rolling 5-second window stays
+elevated (default >= 55%, gated by `TalkGate` with the same
+require-sustained/rate-limit shape as `DetectionGate`), it emits a `talking`
+flag meaning "an officer should check this seat", never a claim of what was
+said or that collusion occurred. If no microphone is available the worker
+degrades gracefully — phone/identity detection are unaffected — and reports
+`audio_unavailable`. Disable explicitly with `--no-audio`.
 
 ## Set up this workstation
 
@@ -81,6 +112,18 @@ two samples, and check the candidate/seat/time flag in invigilator risk details.
 Remove it; check no continuing flags. Test camera disconnect and exam termination.
 Validate thresholds across lighting, desks, calculators and other lookalike
 objects before operational use. Do not interpret confidence as proof of misconduct.
+
+Identity check: run a short exam with `--reference-photo` pointed at a known
+candidate photo, have a different person sit in for one of the three scheduled
+snapshots, and confirm a mismatch flag with a reasonable distance value appears
+in risk details — then repeat with the correct candidate and confirm no flag.
+
+Voice-activity check: start an exam with a microphone connected, talk
+continuously near the seat for several seconds, and confirm a `talking` flag
+appears with no continuing flags for at least the cooldown window afterward.
+Disconnect the microphone and confirm phone/identity detection continue
+unaffected with an `audio_unavailable` status. Confirm no audio file or buffer
+is ever written to disk during any of this.
 
 References: [YOLO11](https://docs.ultralytics.com/models/yolo11/),
 [prediction API](https://docs.ultralytics.com/modes/predict/),

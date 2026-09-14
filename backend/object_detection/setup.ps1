@@ -5,6 +5,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Python runtime creation failed' }
 $runtimePython = Join-Path $runtimeDirectory 'Scripts/python.exe'
 & $runtimePython -m pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cpu
 if ($LASTEXITCODE -ne 0) { throw 'CPU inference dependencies failed' }
+# opencv-contrib-python (needed for face recognition) conflicts with a plain
+# opencv-python from an older run of this script in the same venv — drop it
+# first so re-running setup on an existing workstation doesn't end up with
+# both installed.
+& $runtimePython -m pip uninstall -y opencv-python 2>$null
 & $runtimePython -m pip install -r (Join-Path $PSScriptRoot 'requirements.txt')
 if ($LASTEXITCODE -ne 0) { throw 'Detector dependencies failed' }
 $modelDirectory = Join-Path $PSScriptRoot 'models'

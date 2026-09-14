@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -124,15 +126,20 @@ class CenterExamRunController extends GetxController {
         'usb.audit.',
         'objects.audit.',
       );
+      final referencePhotoPath = candidate == null
+          ? null
+          : await _extractReferencePhoto(candidate.photoAsset);
       await _objectDetector.start(
         _recordObjectFlag,
         onStatus: (status) {
           if (!isClosed) objectDetectionStatus.value = status;
         },
+        referencePhotoPath: referencePhotoPath,
+        durationSeconds: payload.durationMinutes * 60,
       );
       if (isClosed) {
         _usbMonitor.stop();
-        await _objectDetector.stop();
+        await _stopObjectDetection();
         return;
       }
       _startTimer();
@@ -205,9 +212,50 @@ class CenterExamRunController extends GetxController {
     }
   }
 
+  Directory? _referencePhotoDir;
+
+  /// Copies the candidate's enrolled photo (a bundled Flutter asset) out to
+  /// a plain file the local detector subprocess can open directly — Flutter
+  /// assets live inside the app bundle, not on the filesystem, so the
+  /// Python worker has no other way to read one. Returns null (identity
+  /// checks are simply skipped) if the asset can't be loaded. Bounded by a
+  /// short timeout so a slow/broken disk never delays exam launch — this is
+  /// an auxiliary integrity feature, not something worth blocking on.
+  Future<String?> _extractReferencePhoto(String assetPath) async {
+    if (assetPath.trim().isEmpty) return null;
+    try {
+      return await _copyReferencePhoto(
+        assetPath,
+      ).timeout(const Duration(seconds: 2));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String?> _copyReferencePhoto(String assetPath) async {
+    final bytes = await rootBundle.load(assetPath);
+    final dir = await Directory.systemTemp.createTemp('abu_reference_photo_');
+    _referencePhotoDir = dir;
+    final extension = assetPath.contains('.')
+        ? assetPath.substring(assetPath.lastIndexOf('.'))
+        : '.jpg';
+    final file = File('${dir.path}/reference$extension');
+    await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
+    return file.path;
+  }
+
   Future<void> _stopObjectDetection() async {
     objectDetectionStatus.value = 'Stopped';
     await _objectDetector.stop();
+    final dir = _referencePhotoDir;
+    _referencePhotoDir = null;
+    if (dir != null) {
+      try {
+        await dir.delete(recursive: true);
+      } catch (_) {
+        // Best-effort cleanup; a leftover temp file isn't worth failing over.
+      }
+    }
   }
 
   CenterQuestion get currentQuestion =>

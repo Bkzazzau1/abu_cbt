@@ -1,2 +1,3 @@
 ultralytics==8.3.244
-opencv-python==4.12.0.88
+opencv-contrib-python==4.12.0.88
+sounddevice==0.5.2
