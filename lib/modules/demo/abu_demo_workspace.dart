@@ -155,18 +155,11 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
           padding: const EdgeInsets.fromLTRB(24, 30, 20, 28),
           child: Row(
             children: [
-              Container(
+              Image.asset(
+                'assets/abulogo.png',
                 width: 44,
                 height: 48,
-                decoration: BoxDecoration(
-                  color: abuGreen,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.school_outlined,
-                  color: Colors.white,
-                  size: 27,
-                ),
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -177,7 +170,7 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ABU ZARIA',
+                        'Ahmadu Bello University, Zaria',
                         style: TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.w800,

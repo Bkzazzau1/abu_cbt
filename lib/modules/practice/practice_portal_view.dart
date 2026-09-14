@@ -348,6 +348,12 @@ class _PracticePortalViewState extends State<PracticePortalView> {
                         'Completed',
                         '${exams.where((e) => e.status == CenterExamStatus.completed).length} / ${exams.length} courses',
                       ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: () => Get.toNamed(Routes.deviceRegistration),
+                        icon: const Icon(Icons.dns_outlined, size: 16),
+                        label: const Text('Register / manage workstation'),
+                      ),
                     ],
                   ),
                 ),

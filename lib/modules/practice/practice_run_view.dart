@@ -15,15 +15,24 @@ class PracticeRunView extends GetView<CenterExamRunController> {
   Widget build(BuildContext context) => PopScope(
     canPop: false,
     child: Obx(() {
+      if (controller.isLoadingExam.value) {
+        return const PracticeScaffold(
+          child: Center(child: CircularProgressIndicator()),
+        );
+      }
       final exam = controller.exam.value;
       if (exam == null) {
-        return const PracticeScaffold(
+        return PracticeScaffold(
           child: PracticeTitle(
             'No examination loaded',
-            'Open a course from the practice centre to begin.',
+            controller.examLoadError.value.isEmpty
+                ? 'Open a course from the practice centre to begin.'
+                : controller.examLoadError.value,
           ),
         );
       }
+      // Read here so navigation is observed before deferred layout builders run.
+      final q = controller.currentQuestion;
       final seconds = controller.secondsLeft.value;
       final time =
           '${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}';
@@ -40,6 +49,12 @@ class PracticeRunView extends GetView<CenterExamRunController> {
           ),
           child: Column(
             children: [
+              Obx(
+                () => Text(
+                  'Camera: ${controller.objectDetectionStatus.value}',
+                  style: const TextStyle(fontSize: 10, color: abuMuted),
+                ),
+              ),
               const Text(
                 'TIME REMAINING',
                 style: TextStyle(
@@ -65,7 +80,6 @@ class PracticeRunView extends GetView<CenterExamRunController> {
           builder: (context) => LayoutBuilder(
             builder: (context, c) {
               final wide = c.maxWidth >= 920;
-              final q = controller.currentQuestion;
               final workspace = Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

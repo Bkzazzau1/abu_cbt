@@ -38,3 +38,19 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# Rust owns the Windows USB notification subscription and event memory.
+find_program(CARGO_EXECUTABLE cargo REQUIRED)
+set(USB_MONITOR_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../backend/usb_monitor")
+set(USB_MONITOR_TARGET "${CMAKE_BINARY_DIR}/usb_monitor")
+add_custom_target(usb_monitor_build
+  COMMAND "${CARGO_EXECUTABLE}" build --release --locked
+    --manifest-path "${USB_MONITOR_DIR}/Cargo.toml"
+    --target-dir "${USB_MONITOR_TARGET}"
+  BYPRODUCTS "${USB_MONITOR_TARGET}/release/usb_monitor.dll"
+  VERBATIM)
+add_dependencies(${BINARY_NAME} usb_monitor_build)
+add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${USB_MONITOR_TARGET}/release/usb_monitor.dll"
+    "$<TARGET_FILE_DIR:${BINARY_NAME}>/usb_monitor.dll")

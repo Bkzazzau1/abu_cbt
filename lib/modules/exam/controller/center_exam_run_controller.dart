@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/routes/app_routes.dart';
 
@@ -13,6 +14,9 @@ import '../../../data/models/workstation_models.dart';
 import '../../../data/models/workstation_presence_models.dart';
 import '../../../data/services/hall_network_risk_service.dart';
 import '../../../data/services/network_health_service.dart';
+import '../../../data/services/object_detection_service.dart';
+import '../../../data/services/seat_question_order_service.dart';
+import '../../../data/services/usb_monitor_service.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 import '../../../data/services/workstation_service.dart';
 import '../models/whiteboard_models.dart';
@@ -20,7 +24,33 @@ import '../../demo/abu_demo_theme.dart';
 import '../../portal/controller/center_exam_portal_controller.dart';
 
 class CenterExamRunController extends GetxController {
+  CenterExamRunController({
+    UsbMonitorService? usbMonitor,
+    ObjectDetectionService? objectDetector,
+    Future<HallIpRiskAssessment> Function({required String hallName})?
+    assessHall,
+  }) : _usbMonitor = usbMonitor ?? UsbMonitorService(),
+       _objectDetector = objectDetector ?? ObjectDetectionService(),
+       _assessHall = assessHall ?? HallNetworkRiskService.assess;
+
+  final UsbMonitorService _usbMonitor;
+  final ObjectDetectionService _objectDetector;
+  final objectDetectionStatus = 'Inactive'.obs;
+  final objectDetectionFlags = <String>[].obs;
+  Future<void> _objectAuditWrite = Future<void>.value();
+  String _objectAuditKey = '';
+  List<String> get _monitorFlags => [...usbFlags, ...objectDetectionFlags];
+  final Future<HallIpRiskAssessment> Function({required String hallName})
+  _assessHall;
+  final usbFlags = <String>[].obs;
+  Timer? _presenceTimer;
+  bool _presenceBusy = false;
+  bool _endingExam = false;
+  Future<void> _usbAuditWrite = Future<void>.value();
+  String _usbAuditKey = '';
   final exam = Rxn<CenterExam>();
+  final isLoadingExam = false.obs;
+  final examLoadError = ''.obs;
 
   final currentIndex = 0.obs;
   final answers = <String, CenterCandidateAnswer>{}.obs;
@@ -59,13 +89,125 @@ class CenterExamRunController extends GetxController {
     }
 
     if (payload != null) {
-      exam.value = payload;
+      unawaited(_prepareExam(payload));
+    }
+  }
+
+  Future<void> _prepareExam(CenterExam payload) async {
+    isLoadingExam.value = true;
+    try {
+      final candidate = Get.isRegistered<CenterExamPortalController>()
+          ? Get.find<CenterExamPortalController>().candidate.value
+          : null;
+      final registration = candidate == null
+          ? await WorkstationService.loadOrCreate()
+          : await WorkstationService.ensureAssignmentFromAttendance(
+              candidateRegistrationNumber: candidate.registrationNumber,
+            );
+      if (isClosed) return;
+      if (payload.questions.isEmpty) {
+        examLoadError.value = 'This exam has no questions.';
+        return;
+      }
+      exam.value = SeatQuestionOrderService.forSeat(
+        payload,
+        registration.seatNumber,
+      );
       secondsLeft.value = payload.durationMinutes * 60;
       _syncCurrentAnswer();
       _markSaved();
+      _usbAuditKey =
+          'usb.audit.${registration.workstationId}.${payload.id}.'
+          '${DateTime.now().microsecondsSinceEpoch}';
+      await _usbMonitor.start(_recordUsbFlag);
+      _objectAuditKey = _usbAuditKey.replaceFirst(
+        'usb.audit.',
+        'objects.audit.',
+      );
+      await _objectDetector.start(
+        _recordObjectFlag,
+        onStatus: (status) {
+          if (!isClosed) objectDetectionStatus.value = status;
+        },
+      );
+      if (isClosed) {
+        _usbMonitor.stop();
+        await _objectDetector.stop();
+        return;
+      }
       _startTimer();
       unawaited(_emitInExamHeartbeat());
+      _presenceTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+        unawaited(_emitInExamHeartbeat());
+      });
+    } catch (_) {
+      if (!isClosed) {
+        examLoadError.value =
+            'Unable to load the seat assignment. Go back and try again.';
+      }
+    } finally {
+      if (!isClosed) isLoadingExam.value = false;
     }
+  }
+
+  void _recordUsbFlag(String flag) {
+    // Bound live telemetry. The final entry explicitly indicates truncation.
+    if (usbFlags.length < 100) {
+      usbFlags.add(flag);
+    } else {
+      usbFlags[99] =
+          'USB event limit reached; further connections require officer review.';
+    }
+    if (_usbAuditKey.isNotEmpty) {
+      final snapshot = List<String>.of(usbFlags);
+      _usbAuditWrite = _usbAuditWrite
+          .then((_) async {
+            final prefs = await SharedPreferences.getInstance();
+            final saved = await prefs.setStringList(_usbAuditKey, snapshot);
+            if (!saved) throw StateError('USB audit write failed');
+          })
+          .catchError((Object _) {
+            const failure = 'USB audit could not be saved locally.';
+            if (!usbFlags.contains(failure)) usbFlags.add(failure);
+          });
+    }
+    if (!_endingExam && !isClosed && exam.value != null) {
+      unawaited(_emitInExamHeartbeat());
+    }
+  }
+
+  void _recordObjectFlag(String flag) {
+    if (objectDetectionFlags.length < 100) {
+      objectDetectionFlags.add(flag);
+    } else {
+      objectDetectionFlags[99] =
+          'Object detection event limit reached; officer review required.';
+    }
+    if (_objectAuditKey.isNotEmpty) {
+      final snapshot = List<String>.of(objectDetectionFlags);
+      _objectAuditWrite = _objectAuditWrite
+          .then((_) async {
+            final prefs = await SharedPreferences.getInstance();
+            if (!await prefs.setStringList(_objectAuditKey, snapshot)) {
+              throw StateError('Object detection audit write failed');
+            }
+          })
+          .catchError((Object _) {
+            const failure =
+                'Object detection audit could not be saved locally.';
+            if (!objectDetectionFlags.contains(failure)) {
+              objectDetectionFlags.add(failure);
+            }
+          });
+    }
+    if (!_endingExam && !isClosed && exam.value != null) {
+      unawaited(_emitInExamHeartbeat());
+    }
+  }
+
+  Future<void> _stopObjectDetection() async {
+    objectDetectionStatus.value = 'Stopped';
+    await _objectDetector.stop();
   }
 
   CenterQuestion get currentQuestion =>
@@ -276,6 +418,8 @@ class CenterExamRunController extends GetxController {
   void _handleTimeUp() {
     if (isSubmitted.value || _timeUpDialogShown) return;
     _timer?.cancel();
+    _usbMonitor.stop();
+    unawaited(_stopObjectDetection());
     _timeUpDialogShown = true;
     Get.dialog(
       Theme(
@@ -470,15 +614,22 @@ class CenterExamRunController extends GetxController {
   }
 
   Future<void> _finalizeSubmission({required bool autoSubmitted}) async {
-    if (isSubmitted.value) return;
+    if (isSubmitted.value || _endingExam) return;
     final examValue = exam.value;
     if (examValue == null) return;
+    _endingExam = true;
+    _presenceTimer?.cancel();
+    _usbMonitor.stop();
+    await _stopObjectDetection();
+    await _usbAuditWrite;
+    await _objectAuditWrite;
     final risk = await _assessSubmissionRisk();
     await _emitUsageHeartbeat(
       WorkstationUsageState.submitted,
       registrationOverride: risk.registration,
       riskContext: risk,
     );
+    await _submitAnswersForIntegrityCheck(examValue, risk);
 
     isSubmitted.value = true;
     _timer?.cancel();
@@ -526,13 +677,56 @@ class CenterExamRunController extends GetxController {
     await WorkstationService.markSubmission(risk.registration.workstationId);
   }
 
-  Future<void> _emitInExamHeartbeat() async {
-    final risk = await _assessSubmissionRisk();
-    await _emitUsageHeartbeat(
-      WorkstationUsageState.inExam,
-      registrationOverride: risk.registration,
-      riskContext: risk,
+  /// Sends each free-text answer to the backend at submission time so the
+  /// Python AI service can compare it against the rest of the hall's
+  /// answers for that question and flag likely collusion. Objective
+  /// (multiple-choice/drag-drop) answers carry no text and are skipped.
+  Future<void> _submitAnswersForIntegrityCheck(
+    CenterExam examValue,
+    _SubmissionRiskContext risk,
+  ) async {
+    final textAnswers = answers.values.where(
+      (a) => (a.textAnswer ?? '').trim().isNotEmpty,
     );
+    if (textAnswers.isEmpty) return;
+
+    final wsService = Get.isRegistered<WorkstationPresenceWsService>()
+        ? Get.find<WorkstationPresenceWsService>()
+        : Get.put(WorkstationPresenceWsService());
+    await wsService.connectWorkstation();
+
+    final candidate = Get.isRegistered<CenterExamPortalController>()
+        ? Get.find<CenterExamPortalController>().candidate.value
+        : null;
+
+    for (final answer in textAnswers) {
+      wsService.sendAnswerSubmission(
+        registrationNumber: candidate?.registrationNumber ?? '',
+        candidateName: candidate?.fullName ?? '',
+        hallName: risk.registration.hallName,
+        seatNumber: risk.registration.seatNumber,
+        examId: examValue.id,
+        questionId: answer.questionId,
+        textAnswer: answer.textAnswer!.trim(),
+      );
+    }
+  }
+
+  Future<void> _emitInExamHeartbeat() async {
+    if (_presenceBusy || _endingExam || isClosed) return;
+    _presenceBusy = true;
+    try {
+      final risk = await _assessSubmissionRisk();
+      await _emitUsageHeartbeat(
+        WorkstationUsageState.inExam,
+        registrationOverride: risk.registration,
+        riskContext: risk,
+      );
+    } catch (_) {
+      // The next periodic heartbeat retries without interrupting the exam.
+    } finally {
+      _presenceBusy = false;
+    }
   }
 
   Future<void> _emitUsageHeartbeat(
@@ -550,6 +744,9 @@ class CenterExamRunController extends GetxController {
           : Get.put(WorkstationPresenceWsService());
 
       await wsService.connectWorkstation();
+      if (state == WorkstationUsageState.inExam && (_endingExam || isClosed)) {
+        return;
+      }
 
       final candidate = Get.isRegistered<CenterExamPortalController>()
           ? Get.find<CenterExamPortalController>().candidate.value
@@ -573,13 +770,14 @@ class CenterExamRunController extends GetxController {
           workstationStatus: registration.status,
           eventAtIso: DateTime.now().toIso8601String(),
           riskFlagged:
-              riskContext?.riskFlagged ??
-              registration.status != WorkstationStatus.whitelisted,
+              _monitorFlags.isNotEmpty ||
+              (riskContext?.riskFlagged ??
+                  registration.status != WorkstationStatus.whitelisted),
           isNewWorkstation: riskContext?.isNewWorkstation ?? false,
           clientIpAddress: riskContext?.ipAddress ?? '',
           expectedHallIpRange: riskContext?.expectedRangeLabel ?? '',
           ipInExpectedRange: riskContext?.ipInExpectedRange ?? true,
-          riskReasons: riskContext?.reasons ?? const <String>[],
+          riskReasons: {...?riskContext?.reasons, ..._monitorFlags}.toList(),
           workstationApproved:
               riskContext?.workstationApproved ??
               registration.status == WorkstationStatus.whitelisted,
@@ -630,9 +828,7 @@ class CenterExamRunController extends GetxController {
       reasons.add('New workstation detected (no prior submission history).');
     }
 
-    final ipAssessment = await HallNetworkRiskService.assess(
-      hallName: registration.hallName,
-    );
+    final ipAssessment = await _assessHall(hallName: registration.hallName);
 
     var ipInRange = ipAssessment.matchesExpectedRange;
     if (!ipAssessment.hasExpectedRange) {
@@ -679,6 +875,7 @@ class CenterExamRunController extends GetxController {
       _ => 'low',
     };
 
+    reasons.addAll(_monitorFlags);
     return _SubmissionRiskContext(
       registration: registration,
       riskFlagged: reasons.isNotEmpty,
@@ -727,6 +924,10 @@ class CenterExamRunController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
+    _endingExam = true;
+    _presenceTimer?.cancel();
+    _usbMonitor.stop();
+    unawaited(_stopObjectDetection());
     super.onClose();
   }
 }

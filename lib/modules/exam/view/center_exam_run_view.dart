@@ -24,11 +24,31 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
         : null;
 
     return Scaffold(
+      bottomNavigationBar: Obx(
+        () => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Camera monitoring: ${controller.objectDetectionStatus.value}',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      ),
       extendBodyBehindAppBar: true,
       body: Obx(() {
+        if (controller.isLoadingExam.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
         final exam = controller.exam.value;
         if (exam == null) {
-          return const Center(child: Text('No exam loaded.'));
+          return Center(
+            child: Text(
+              controller.examLoadError.value.isEmpty
+                  ? 'No exam loaded.'
+                  : controller.examLoadError.value,
+            ),
+          );
         }
 
         final q = controller.currentQuestion;

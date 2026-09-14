@@ -79,7 +79,36 @@ class InvigilatorDashboardController extends GetxController {
           r.registrationNumber.toLowerCase().contains(q);
 
       return hallOk && statusOk && queryOk;
-    }).toList();
+    }).toList()..sort(_byRiskDescending);
+  }
+
+  /// Highest-risk flagged candidates, most urgent first — the "check these
+  /// first" list so an invigilator isn't scanning a flat grid to find them.
+  /// A check-in/workstation mismatch or an AI-flagged answer similarity is
+  /// treated as urgent as a submission risk flag.
+  List<InvigilatorWorkstationRecord> get priorityQueue {
+    final flagged = records.where(_isUrgent).toList()..sort(_byRiskDescending);
+    return flagged.take(5).toList();
+  }
+
+  bool _isUrgent(InvigilatorWorkstationRecord r) =>
+      r.riskFlagged || r.checkInMismatch || r.similarityFlagged;
+
+  int _byRiskDescending(
+    InvigilatorWorkstationRecord a,
+    InvigilatorWorkstationRecord b,
+  ) {
+    final aUrgent = _isUrgent(a);
+    final bUrgent = _isUrgent(b);
+    if (aUrgent != bUrgent) {
+      return aUrgent ? -1 : 1;
+    }
+    final aHard = a.checkInMismatch || a.similarityFlagged;
+    final bHard = b.checkInMismatch || b.similarityFlagged;
+    if (aHard != bHard) {
+      return aHard ? -1 : 1;
+    }
+    return b.riskScore.compareTo(a.riskScore);
   }
 
   int get totalCount => records.length;
@@ -92,6 +121,10 @@ class InvigilatorDashboardController extends GetxController {
   int get riskFlaggedCount => records.where((e) => e.riskFlagged).length;
   int get criticalRiskCount =>
       records.where((e) => e.riskLevel.toLowerCase() == 'critical').length;
+  int get checkInMismatchCount =>
+      records.where((e) => e.checkInMismatch).length;
+  int get similarityFlaggedCount =>
+      records.where((e) => e.similarityFlagged).length;
 
   void updateSearch(String _) {
     records.refresh();
@@ -219,6 +252,10 @@ class InvigilatorDashboardController extends GetxController {
         workstationApproved: update.workstationApproved,
         riskScore: update.riskScore,
         riskLevel: update.riskLevel,
+        checkInMismatch: update.checkInMismatch,
+        checkInMismatchReason: update.checkInMismatchReason,
+        similarityFlagged: update.similarityFlagged,
+        similarityReason: update.similarityReason,
       );
       records.refresh();
       return;
@@ -246,6 +283,10 @@ class InvigilatorDashboardController extends GetxController {
         workstationApproved: update.workstationApproved,
         riskScore: update.riskScore,
         riskLevel: update.riskLevel,
+        checkInMismatch: update.checkInMismatch,
+        checkInMismatchReason: update.checkInMismatchReason,
+        similarityFlagged: update.similarityFlagged,
+        similarityReason: update.similarityReason,
       ),
     );
     records.refresh();

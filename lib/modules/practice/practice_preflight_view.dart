@@ -53,6 +53,12 @@ class _PracticePreflightViewState extends State<PracticePreflightView> {
                 : 'A few simple guidelines to help you get the most out of this practice session.',
           ),
           const SizedBox(height: 28),
+          const Text(
+            'During the exam, your camera checks for possible phones on this device. '
+            'Detection flags are sent to the exam officer for review.',
+            style: TextStyle(color: abuMuted, fontSize: 12, height: 1.6),
+          ),
+          const SizedBox(height: 16),
           practiceColumns(
             PracticeCard(
               child: Column(

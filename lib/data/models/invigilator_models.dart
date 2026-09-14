@@ -30,6 +30,10 @@ class InvigilatorWorkstationRecord {
     this.workstationApproved = false,
     this.riskScore = 0,
     this.riskLevel = 'low',
+    this.checkInMismatch = false,
+    this.checkInMismatchReason = '',
+    this.similarityFlagged = false,
+    this.similarityReason = '',
   });
 
   final String workstationId;
@@ -52,6 +56,10 @@ class InvigilatorWorkstationRecord {
   final bool workstationApproved;
   final int riskScore;
   final String riskLevel;
+  final bool checkInMismatch;
+  final String checkInMismatchReason;
+  final bool similarityFlagged;
+  final String similarityReason;
 
   InvigilatorWorkstationRecord copyWith({
     String? workstationId,
@@ -74,6 +82,10 @@ class InvigilatorWorkstationRecord {
     bool? workstationApproved,
     int? riskScore,
     String? riskLevel,
+    bool? checkInMismatch,
+    String? checkInMismatchReason,
+    bool? similarityFlagged,
+    String? similarityReason,
   }) {
     return InvigilatorWorkstationRecord(
       workstationId: workstationId ?? this.workstationId,
@@ -96,6 +108,11 @@ class InvigilatorWorkstationRecord {
       workstationApproved: workstationApproved ?? this.workstationApproved,
       riskScore: riskScore ?? this.riskScore,
       riskLevel: riskLevel ?? this.riskLevel,
+      checkInMismatch: checkInMismatch ?? this.checkInMismatch,
+      checkInMismatchReason:
+          checkInMismatchReason ?? this.checkInMismatchReason,
+      similarityFlagged: similarityFlagged ?? this.similarityFlagged,
+      similarityReason: similarityReason ?? this.similarityReason,
     );
   }
 }

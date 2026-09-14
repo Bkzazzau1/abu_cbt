@@ -22,6 +22,10 @@ class WorkstationPresenceRecord {
     this.workstationApproved = false,
     this.riskScore = 0,
     this.riskLevel = 'low',
+    this.checkInMismatch = false,
+    this.checkInMismatchReason = '',
+    this.similarityFlagged = false,
+    this.similarityReason = '',
   });
 
   final String workstationId;
@@ -43,6 +47,10 @@ class WorkstationPresenceRecord {
   final bool workstationApproved;
   final int riskScore;
   final String riskLevel;
+  final bool checkInMismatch;
+  final String checkInMismatchReason;
+  final bool similarityFlagged;
+  final String similarityReason;
 
   Map<String, dynamic> toJson() {
     return {
@@ -65,6 +73,10 @@ class WorkstationPresenceRecord {
       'workstationApproved': workstationApproved,
       'riskScore': riskScore,
       'riskLevel': riskLevel,
+      'checkInMismatch': checkInMismatch,
+      'checkInMismatchReason': checkInMismatchReason,
+      'similarityFlagged': similarityFlagged,
+      'similarityReason': similarityReason,
     };
   }
 
@@ -105,6 +117,10 @@ class WorkstationPresenceRecord {
           ? json['riskScore'] as int
           : int.tryParse((json['riskScore'] ?? '0').toString()) ?? 0,
       riskLevel: (json['riskLevel'] ?? 'low').toString(),
+      checkInMismatch: json['checkInMismatch'] == true,
+      checkInMismatchReason: (json['checkInMismatchReason'] ?? '').toString(),
+      similarityFlagged: json['similarityFlagged'] == true,
+      similarityReason: (json['similarityReason'] ?? '').toString(),
     );
   }
 }

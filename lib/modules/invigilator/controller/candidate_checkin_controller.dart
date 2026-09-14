@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../data/models/checkin_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
+import '../../../data/services/workstation_presence_ws_service.dart';
 
 class CandidateCheckInController extends GetxController {
   final record = Rxn<CandidateCheckInRecord>();
@@ -50,10 +51,27 @@ class CandidateCheckInController extends GetxController {
       status: CandidateCheckInStatus.checkedIn,
       note: notesController.text.trim(),
     );
+    _broadcastCheckIn(record.value!);
     Get.snackbar(
       'Checked In',
       'Candidate marked as checked in.',
       snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  /// Tells the shared workstation-presence backend where this candidate
+  /// physically checked in, so it can flag a later submission from a
+  /// different hall/seat as a possible impersonation/mismatch.
+  void _broadcastCheckIn(CandidateCheckInRecord record) {
+    if (record.registrationNumber.trim().isEmpty) return;
+    final service = Get.isRegistered<WorkstationPresenceWsService>()
+        ? Get.find<WorkstationPresenceWsService>()
+        : Get.put(WorkstationPresenceWsService());
+    service.sendCheckIn(
+      registrationNumber: record.registrationNumber,
+      candidateName: record.candidateName,
+      hallName: record.hallName,
+      seatNumber: record.seatNumber,
     );
   }
 

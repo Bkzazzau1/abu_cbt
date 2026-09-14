@@ -72,6 +72,19 @@ endif()
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/../backend/object_detection/"
+  DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/object_detection"
+  COMPONENT Runtime
+  PATTERN ".venv" EXCLUDE
+  PATTERN ".config" EXCLUDE
+  PATTERN "runtime.json" EXCLUDE
+  PATTERN "__pycache__" EXCLUDE
+  PATTERN "test_*" EXCLUDE
+  PATTERN ".gitignore" EXCLUDE)
+
+install(FILES "${CMAKE_BINARY_DIR}/usb_monitor/release/usb_monitor.dll"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
+
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 

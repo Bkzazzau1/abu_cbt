@@ -106,6 +106,7 @@ class DemoRouteGuard extends GetMiddleware {
       Routes.centerExamConfirmation,
       Routes.centerExamRun,
       Routes.centerExamSubmit,
+      Routes.deviceRegistration,
     ];
     if (route == Routes.demo) return null;
     if (role == 'Student' && !studentRoutes.contains(route)) {

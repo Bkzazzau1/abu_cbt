@@ -38,6 +38,57 @@ class WorkstationPresenceWsService extends GetxService {
     _channel!.sink.add(jsonEncode(envelope));
   }
 
+  /// Sent by the invigilator app when a candidate is physically checked in,
+  /// so the backend can flag a candidate later submitting from a different
+  /// workstation/hall/seat than where they checked in.
+  void sendCheckIn({
+    required String registrationNumber,
+    required String candidateName,
+    required String hallName,
+    required String seatNumber,
+  }) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'checkIn',
+      'payload': {
+        'registrationNumber': registrationNumber,
+        'candidateName': candidateName,
+        'hallName': hallName,
+        'seatNumber': seatNumber,
+        'checkedInAtIso': DateTime.now().toIso8601String(),
+      },
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
+  /// Sent by a candidate's exam workstation at submission time for each
+  /// free-text answer, so the backend can run AI answer-similarity checks
+  /// against the rest of the hall and flag likely collusion.
+  void sendAnswerSubmission({
+    required String registrationNumber,
+    required String candidateName,
+    required String hallName,
+    required String seatNumber,
+    required String examId,
+    required String questionId,
+    required String textAnswer,
+  }) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'answerSubmission',
+      'payload': {
+        'registrationNumber': registrationNumber,
+        'candidateName': candidateName,
+        'hallName': hallName,
+        'seatNumber': seatNumber,
+        'examId': examId,
+        'questionId': questionId,
+        'textAnswer': textAnswer,
+      },
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
   Future<void> disconnect() async {
     await _subscription?.cancel();
     _subscription = null;
@@ -80,10 +131,7 @@ class WorkstationPresenceWsService extends GetxService {
     }
   }
 
-  Uri _buildUri({
-    required String path,
-    Map<String, String>? query,
-  }) {
+  Uri _buildUri({required String path, Map<String, String>? query}) {
     final host = kIsWeb ? Uri.base.host : '127.0.0.1';
     final secure = kIsWeb && Uri.base.scheme == 'https';
     final scheme = secure ? 'wss' : 'ws';

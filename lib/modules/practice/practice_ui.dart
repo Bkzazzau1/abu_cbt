@@ -43,18 +43,11 @@ class PracticeScaffold extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                       ],
-                      Container(
+                      Image.asset(
+                        'assets/abulogo.png',
                         width: 39,
                         height: 42,
-                        decoration: BoxDecoration(
-                          color: abuGreen,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.school_outlined,
-                          color: Colors.white,
-                          size: 23,
-                        ),
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -62,11 +55,13 @@ class PracticeScaffold extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'ABU ZARIA',
+                              'Ahmadu Bello University, Zaria',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                                letterSpacing: 1,
+                                fontSize: 12,
+                                letterSpacing: 0.2,
                               ),
                             ),
                             const SizedBox(height: 3),

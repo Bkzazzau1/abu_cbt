@@ -53,6 +53,60 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
               const SizedBox(height: 18),
               _SummaryRow(controller: controller),
               const SizedBox(height: 18),
+              Obx(() {
+                final queue = controller.priorityQueue;
+                if (queue.isEmpty) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: KsPageSection(
+                    title: 'Priority Queue',
+                    subtitle:
+                        'Highest-risk candidates, ranked — check these first.',
+                    child: GlassCard(
+                      tone: GlassCardTone.danger,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (final record in queue)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 34,
+                                    child: Text(
+                                      '${record.riskScore}%',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFFEF4444),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      '${record.hallName} • Seat ${record.seatNumber} — '
+                                      '${record.candidateName.isEmpty ? record.workstationId : record.candidateName}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  riskLevelChip(
+                                    record.riskLevel,
+                                    record.riskScore,
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
               KsPageSection(
                 title: 'Search & Filter',
                 subtitle:
@@ -376,6 +430,18 @@ class _SummaryRow extends StatelessWidget {
           icon: Icons.warning_amber_outlined,
           width: 240,
         ),
+        KsStatCard(
+          title: 'Check-In Mismatch',
+          value: '${controller.checkInMismatchCount}',
+          icon: Icons.badge_outlined,
+          width: 240,
+        ),
+        KsStatCard(
+          title: 'Similar Answers (AI)',
+          value: '${controller.similarityFlaggedCount}',
+          icon: Icons.compare_arrows_outlined,
+          width: 240,
+        ),
       ],
     );
   }
@@ -448,7 +514,25 @@ class _WorkstationCard extends StatelessWidget {
                       ),
                     ),
                   if (record.riskFlagged)
-                    _riskLevelChip(record.riskLevel, record.riskScore),
+                    riskLevelChip(record.riskLevel, record.riskScore),
+                  if (record.checkInMismatch)
+                    const KsStatusChip(
+                      label: 'Check-In Mismatch',
+                      tone: KsStatusChipTone.danger,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                    ),
+                  if (record.similarityFlagged)
+                    const KsStatusChip(
+                      label: 'Similar Answer (AI)',
+                      tone: KsStatusChipTone.danger,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                    ),
                 ],
               );
 
@@ -627,6 +711,95 @@ class _WorkstationCard extends StatelessWidget {
               ),
             ),
           ],
+          if (record.checkInMismatch) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                border: Border.all(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.32),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.badge_outlined, color: Color(0xFFEF4444)),
+                      SizedBox(width: 8),
+                      Text(
+                        'Check-In Mismatch',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFEF4444),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    record.checkInMismatchReason.isEmpty
+                        ? 'This candidate is active from a different hall/seat than their check-in record.'
+                        : record.checkInMismatchReason,
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.88),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (record.similarityFlagged) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                border: Border.all(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.32),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.compare_arrows_outlined,
+                        color: Color(0xFFEF4444),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Similar Answer Detected (AI)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFEF4444),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    record.similarityReason.isEmpty
+                        ? 'This candidate\'s answer closely matches another candidate\'s answer in the same hall.'
+                        : record.similarityReason,
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.88),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           const Text(
             'Primary Actions',
@@ -765,35 +938,35 @@ class _WorkstationCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
     );
   }
+}
 
-  Widget _riskLevelChip(String level, int score) {
-    final normalized = level.toLowerCase();
-    switch (normalized) {
-      case 'critical':
-        return KsStatusChip(
-          label: 'Critical Risk ($score%)',
-          tone: KsStatusChipTone.danger,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        );
-      case 'high':
-        return KsStatusChip(
-          label: 'High Risk ($score%)',
-          tone: KsStatusChipTone.warning,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        );
-      case 'medium':
-        return KsStatusChip(
-          label: 'Medium Risk ($score%)',
-          tone: KsStatusChipTone.warningSoft,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        );
-      default:
-        return KsStatusChip(
-          label: 'Low Risk ($score%)',
-          tone: KsStatusChipTone.info,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        );
-    }
+Widget riskLevelChip(String level, int score) {
+  final normalized = level.toLowerCase();
+  switch (normalized) {
+    case 'critical':
+      return KsStatusChip(
+        label: 'Critical Risk ($score%)',
+        tone: KsStatusChipTone.danger,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      );
+    case 'high':
+      return KsStatusChip(
+        label: 'High Risk ($score%)',
+        tone: KsStatusChipTone.warning,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      );
+    case 'medium':
+      return KsStatusChip(
+        label: 'Medium Risk ($score%)',
+        tone: KsStatusChipTone.warningSoft,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      );
+    default:
+      return KsStatusChip(
+        label: 'Low Risk ($score%)',
+        tone: KsStatusChipTone.info,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      );
   }
 }
 
