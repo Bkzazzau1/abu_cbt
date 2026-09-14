@@ -62,6 +62,80 @@ class _RoleLoginViewState extends State<RoleLoginView> {
     }
   }
 
+  Future<void> _openDemo(String demoRole) async {
+    final accounts = DemoAuth.samples[demoRole];
+    if (accounts == null || accounts.isEmpty) return;
+
+    final account = demoRole == 'Invigilator' && accounts.length > 2
+        ? accounts[2]
+        : accounts.first;
+
+    setState(() {
+      role = demoRole;
+      username.text = account.$1;
+      password.text = account.$2;
+      hidden = true;
+      error = null;
+    });
+
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+    await submit();
+  }
+
+  Future<void> _showDemoAccess() async {
+    if (busy) return;
+
+    final selectedRole = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      constraints: const BoxConstraints(maxWidth: 480),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Demo Access',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _DemoAccessButton(
+                  icon: Icons.school_outlined,
+                  label: 'Student Demo',
+                  onTap: () => Navigator.pop(sheetContext, 'Student'),
+                ),
+                const SizedBox(height: 10),
+                _DemoAccessButton(
+                  icon: Icons.security_outlined,
+                  label: 'Invigilator Demo',
+                  onTap: () => Navigator.pop(sheetContext, 'Invigilator'),
+                ),
+                const SizedBox(height: 10),
+                _DemoAccessButton(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'Administrator Demo',
+                  onTap: () => Navigator.pop(sheetContext, 'Administrator'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selectedRole == null) return;
+    await _openDemo(selectedRole);
+  }
+
   @override
   Widget build(BuildContext context) => Theme(
     data: abuDemoTheme(),
@@ -83,7 +157,14 @@ class _RoleLoginViewState extends State<RoleLoginView> {
                     children: [
                       Align(
                         alignment: Alignment.center,
-                        child: Image.asset('assets/abulogo.png', height: 64),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onLongPress: _showDemoAccess,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Image.asset('assets/abulogo.png', height: 64),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       const Text(
@@ -249,4 +330,28 @@ class _RoleLoginViewState extends State<RoleLoginView> {
       ),
     ),
   );
+}
+
+class _DemoAccessButton extends StatelessWidget {
+  const _DemoAccessButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon),
+      label: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        child: Text(label),
+      ),
+    );
+  }
 }
