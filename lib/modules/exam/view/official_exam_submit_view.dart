@@ -30,12 +30,13 @@ class OfficialExamSubmitView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final payload = _payload();
-    final exam = payload['exam'] is CenterExam ? payload['exam'] as CenterExam : null;
+    final exam = payload['exam'] is CenterExam
+        ? payload['exam'] as CenterExam
+        : null;
     final submittedAt = payload['submittedAt'] is DateTime
         ? payload['submittedAt'] as DateTime
         : DateTime.now();
     final queuedForSync = payload['queuedForSync'] == true;
-    final autoSubmitted = payload['autoSubmitted'] == true;
     final workstationId = (payload['workstationId'] ?? '').toString();
     final hallName = (payload['hallName'] ?? '').toString();
     final seatNumber = (payload['seatNumber'] ?? '').toString();
@@ -58,7 +59,9 @@ class OfficialExamSubmitView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Center(child: Image.asset('assets/abulogo.png', height: 62)),
+                        Center(
+                          child: Image.asset('assets/abulogo.png', height: 62),
+                        ),
                         const SizedBox(height: 18),
                         Container(
                           padding: const EdgeInsets.all(32),
@@ -101,7 +104,7 @@ class OfficialExamSubmitView extends StatelessWidget {
                               ),
                               const SizedBox(height: 8),
                               const Text(
-                                'Your submission has been recorded',
+                                'Submission Recorded',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: abuInk,
@@ -109,89 +112,36 @@ class OfficialExamSubmitView extends StatelessWidget {
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                autoSubmitted
-                                    ? 'The examination was submitted automatically when the authorised time expired.'
-                                    : 'Your examination responses have been received by the CBT system.',
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: abuMuted,
-                                  fontSize: 12,
-                                  height: 1.6,
-                                ),
-                              ),
                               const SizedBox(height: 26),
                               const Divider(color: abuLine),
                               const SizedBox(height: 10),
                               _ReceiptRow(
                                 'Course',
-                                exam == null ? '--' : '${exam.courseCode} · ${exam.courseTitle}',
+                                exam == null
+                                    ? '--'
+                                    : '${exam.courseCode} · ${exam.courseTitle}',
                               ),
-                              _ReceiptRow('Submission ID', _submissionId(submittedAt)),
-                              _ReceiptRow('Submitted at', _formatDateTime(submittedAt)),
+                              _ReceiptRow(
+                                'Submission ID',
+                                _submissionId(submittedAt),
+                              ),
+                              _ReceiptRow(
+                                'Submitted at',
+                                _formatDateTime(submittedAt),
+                              ),
                               _ReceiptRow(
                                 'Sync status',
-                                queuedForSync ? 'Pending secure sync' : 'Recorded',
+                                queuedForSync ? 'Pending' : 'Recorded',
                                 warning: queuedForSync,
                               ),
-                              if (hallName.isNotEmpty) _ReceiptRow('Hall', hallName),
-                              if (seatNumber.isNotEmpty) _ReceiptRow('Seat', seatNumber),
+                              if (hallName.isNotEmpty)
+                                _ReceiptRow('Hall', hallName),
+                              if (seatNumber.isNotEmpty)
+                                _ReceiptRow('Seat', seatNumber),
                               if (workstationId.isNotEmpty)
                                 _ReceiptRow('Workstation', workstationId),
-                              const SizedBox(height: 20),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: queuedForSync
-                                      ? const Color(0xFFFFF4E6)
-                                      : const Color(0xFFEEF4EF),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: queuedForSync
-                                        ? const Color(0xFFF1D3A7)
-                                        : const Color(0xFFD7E4D8),
-                                  ),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      queuedForSync
-                                          ? Icons.cloud_off_outlined
-                                          : Icons.pan_tool_alt_outlined,
-                                      color: queuedForSync
-                                          ? const Color(0xFF9A650F)
-                                          : abuGreen,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        queuedForSync
-                                            ? 'Do not close this workstation. Your submission is waiting for secure synchronisation. Signal the invigilator.'
-                                            : 'Remain at your workstation and signal the invigilator for final clearance before leaving the examination hall.',
-                                        style: TextStyle(
-                                          color: queuedForSync
-                                              ? const Color(0xFF7A5319)
-                                              : abuInk,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.55,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
-                        ),
-                        const SizedBox(height: 18),
-                        const Text(
-                          'Examination results are released through the authorised university result process. Scores are not displayed on this workstation after submission.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: abuMuted, fontSize: 11, height: 1.6),
                         ),
                         const SizedBox(height: 18),
                         SizedBox(
