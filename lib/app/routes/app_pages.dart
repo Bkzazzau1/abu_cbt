@@ -6,9 +6,9 @@ import '../../modules/auth/view/role_login_view.dart';
 import '../../modules/auth/demo_auth.dart';
 import '../../modules/exam/controller/center_exam_run_controller.dart';
 import '../../modules/exam/view/center_exam_run_view.dart';
-import '../../modules/exam/view/center_exam_submit_view.dart';
 import '../../modules/exam/view/current_exam_portal_view.dart';
 import '../../modules/exam/view/exam_preflight_view.dart';
+import '../../modules/exam/view/official_exam_submit_view.dart';
 import '../../modules/invigilator/controller/attendance_register_controller.dart';
 import '../../modules/invigilator/controller/candidate_action_panel_controller.dart';
 import '../../modules/invigilator/controller/candidate_checkin_controller.dart';
@@ -113,7 +113,7 @@ class AppPages {
     GetPage(
       middlewares: [DemoRouteGuard()],
       name: Routes.centerExamSubmit,
-      page: () => const CenterExamSubmitView(),
+      page: () => const OfficialExamSubmitView(),
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
