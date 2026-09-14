@@ -7,6 +7,7 @@ import '../../modules/auth/demo_auth.dart';
 import '../../modules/exam/controller/center_exam_run_controller.dart';
 import '../../modules/exam/view/center_exam_run_view.dart';
 import '../../modules/exam/view/current_exam_portal_view.dart';
+import '../../modules/exam/view/exam_fingerprint_view.dart';
 import '../../modules/exam/view/exam_preflight_view.dart';
 import '../../modules/exam/view/official_exam_submit_view.dart';
 import '../../modules/invigilator/controller/attendance_register_controller.dart';
@@ -94,13 +95,18 @@ class AppPages {
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
+      name: Routes.centerExamConfirmation,
+      page: () => const ExamPreflightView(confirmation: true),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
       name: Routes.centerExamInstruction,
       page: () => const ExamPreflightView(),
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
-      name: Routes.centerExamConfirmation,
-      page: () => const ExamPreflightView(confirmation: true),
+      name: Routes.centerExamFingerprint,
+      page: () => const ExamFingerprintView(),
     ),
     GetPage(
       middlewares: [DemoRouteGuard()],
