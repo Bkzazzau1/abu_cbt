@@ -89,21 +89,12 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
                                 ),
                                 const SizedBox(height: 10),
                                 Text(
-                                  'Welcome, ${candidate?.fullName.split(' ').first ?? 'candidate'}',
+                                  'Welcome, ${candidate?.fullName.split(' ').first ?? 'Candidate'}',
                                   style: const TextStyle(
                                     color: abuInk,
                                     fontSize: 30,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: -0.8,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'Only the examination currently authorised for you is displayed. Your candidate information is supplied by the university examination records.',
-                                  style: TextStyle(
-                                    color: abuMuted,
-                                    fontSize: 13,
-                                    height: 1.6,
                                   ),
                                 ),
                                 const SizedBox(height: 28),
@@ -124,10 +115,10 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
                                       level: candidate?.level ?? '--',
                                       programme: candidate?.programme ?? '--',
                                       photoAsset: candidate?.photoAsset,
-                                      onDeviceRegistration: () => Get.toNamed(
-                                        Routes.deviceRegistration,
-                                      ),
+                                      onDeviceRegistration: () =>
+                                          Get.toNamed(Routes.deviceRegistration),
                                     );
+
                                     if (!wide) {
                                       return Column(
                                         children: [
@@ -137,9 +128,9 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
                                         ],
                                       );
                                     }
+
                                     return Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Expanded(flex: 3, child: examCard),
                                         const SizedBox(width: 22),
@@ -148,8 +139,6 @@ class _CurrentExamPortalViewState extends State<CurrentExamPortalView> {
                                     );
                                   },
                                 ),
-                                const SizedBox(height: 22),
-                                const _FlowNotice(),
                               ],
                             ),
                           ),
@@ -254,7 +243,7 @@ class _ExamCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(7),
             ),
             child: const Text(
-              'CURRENT EXAMINATION · ACTIVE',
+              'CURRENT EXAMINATION',
               style: TextStyle(
                 color: abuGreen,
                 fontSize: 10,
@@ -296,14 +285,9 @@ class _ExamCard extends StatelessWidget {
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 13),
-                child: Text('START EXAMINATION PROCESS'),
+                child: Text('START EXAMINATION'),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'The timer does not start here. You will first confirm your candidate details, read the instructions and authenticate your fingerprint.',
-            style: TextStyle(color: abuMuted, fontSize: 10, height: 1.55),
           ),
         ],
       ),
@@ -390,11 +374,6 @@ class _CandidateRecordCard extends StatelessWidget {
           _Info(Icons.school_outlined, 'Department', department),
           _Info(Icons.layers_outlined, 'Level', level),
           _Info(Icons.badge_outlined, 'Programme', programme),
-          const SizedBox(height: 12),
-          const Text(
-            'This information is loaded from the university examination records. Final identity authentication is performed by fingerprint immediately before the examination opens.',
-            style: TextStyle(color: abuMuted, fontSize: 11, height: 1.6),
-          ),
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
@@ -402,35 +381,6 @@ class _CandidateRecordCard extends StatelessWidget {
               onPressed: onDeviceRegistration,
               icon: const Icon(Icons.computer_rounded, size: 17),
               label: const Text('Device registration'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FlowNotice extends StatelessWidget {
-  const _FlowNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF4EF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD7E4D8)),
-      ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.security_rounded, color: abuGreen, size: 20),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Access sequence: candidate record confirmation → examination instructions → fingerprint authentication → secure examination. The exam timer begins only after successful fingerprint authentication.',
-              style: TextStyle(color: abuInk, fontSize: 12, height: 1.6),
             ),
           ),
         ],
@@ -458,12 +408,6 @@ class _NoExamCard extends StatelessWidget {
           Text(
             'No active examination',
             style: TextStyle(fontWeight: FontWeight.w800, fontSize: 19),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'There is no examination currently authorised for this candidate. Please contact the invigilator.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: abuMuted, height: 1.6),
           ),
         ],
       ),
