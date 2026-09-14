@@ -21,16 +21,14 @@ class QuestionMediaBlock extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final builtInDiagram = _builtInExamDiagram(imagePath!);
     Widget imageWidget;
 
-    if (builtInDiagram != null) {
-      imageWidget = builtInDiagram;
-    } else if (imagePath!.startsWith('assets/')) {
+    if (imagePath!.startsWith('assets/')) {
       imageWidget = Image.asset(
         imagePath!,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => _errorBox(cs),
+        errorBuilder: (_, __, ___) =>
+            _builtInExamDiagram(imagePath!) ?? _errorBox(cs),
       );
     } else if (!kIsWeb) {
       imageWidget = Image.file(
