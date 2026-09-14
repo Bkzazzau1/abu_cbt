@@ -142,60 +142,45 @@ class _DiagramFrame extends StatelessWidget {
 class _HashLookupDiagram extends StatelessWidget {
   const _HashLookupDiagram();
 
-  static const values = <String>[
-    '—',
-    '31 → 41',
-    '22 → 32',
-    '73',
-    '44',
-    '—',
-    '—',
-    '—',
-    '18',
-    '59',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return _DiagramFrame(
-      title: 'Hash table using h(k) = k mod 10',
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Keys inserted: 18, 41, 22, 44, 59, 32, 31, 73',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Table(
-            border: TableBorder.all(color: cs.outlineVariant),
-            columnWidths: const {
-              0: FixedColumnWidth(60),
-              1: FlexColumnWidth(),
-            },
+      title: 'Average lookup complexity',
+      child: Table(
+        border: TableBorder.all(color: cs.outlineVariant),
+        columnWidths: const {
+          0: FlexColumnWidth(2.2),
+          1: FlexColumnWidth(1.4),
+          2: FlexColumnWidth(1.4),
+        },
+        children: const [
+          TableRow(
             children: [
-              const TableRow(
-                children: [
-                  _TableCellText('Index', bold: true),
-                  _TableCellText('Stored key(s)', bold: true),
-                ],
-              ),
-              ...List.generate(
-                values.length,
-                (index) => TableRow(
-                  children: [
-                    _TableCellText('$index', bold: true),
-                    _TableCellText(values[index]),
-                  ],
-                ),
-              ),
+              _TableCellText('Data structure', bold: true),
+              _TableCellText('Average lookup', bold: true),
+              _TableCellText('Worst case', bold: true),
+            ],
+          ),
+          TableRow(
+            children: [
+              _TableCellText('Hash table'),
+              _TableCellText('O(1)'),
+              _TableCellText('O(n)'),
+            ],
+          ),
+          TableRow(
+            children: [
+              _TableCellText('Balanced BST'),
+              _TableCellText('O(log n)'),
+              _TableCellText('O(log n)'),
+            ],
+          ),
+          TableRow(
+            children: [
+              _TableCellText('Unsorted array'),
+              _TableCellText('O(n)'),
+              _TableCellText('O(n)'),
             ],
           ),
         ],
@@ -213,7 +198,7 @@ class _TableCellText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       child: Text(
         text,
         style: TextStyle(
@@ -231,7 +216,7 @@ class _TreeTraversalDiagram extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _DiagramFrame(
-      title: 'Binary search tree',
+      title: 'Binary tree traversal prompt',
       child: SizedBox(
         height: 215,
         width: double.infinity,
@@ -256,20 +241,22 @@ class _TreePainter extends CustomPainter {
       ..strokeWidth = 2;
 
     final nodes = <String, Offset>{
-      '8': Offset(size.width * .50, 28),
-      '3': Offset(size.width * .30, 90),
-      '10': Offset(size.width * .70, 90),
-      '1': Offset(size.width * .17, 165),
-      '6': Offset(size.width * .40, 165),
-      '14': Offset(size.width * .82, 165),
+      'A': Offset(size.width * .50, 28),
+      'B': Offset(size.width * .30, 90),
+      'C': Offset(size.width * .70, 90),
+      'D': Offset(size.width * .17, 165),
+      'E': Offset(size.width * .40, 165),
+      'F': Offset(size.width * .60, 165),
+      'G': Offset(size.width * .83, 165),
     };
 
     void edge(String a, String b) => canvas.drawLine(nodes[a]!, nodes[b]!, line);
-    edge('8', '3');
-    edge('8', '10');
-    edge('3', '1');
-    edge('3', '6');
-    edge('10', '14');
+    edge('A', 'B');
+    edge('A', 'C');
+    edge('B', 'D');
+    edge('B', 'E');
+    edge('C', 'F');
+    edge('C', 'G');
 
     for (final entry in nodes.entries) {
       canvas.drawCircle(entry.value, 21, nodeFill);
@@ -288,9 +275,9 @@ class _MitosisDiagram extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const _DiagramFrame(
-      title: 'Stages of mitosis',
+      title: 'Cell division snapshot',
       child: SizedBox(
-        height: 205,
+        height: 215,
         width: double.infinity,
         child: CustomPaint(painter: _MitosisPainter()),
       ),
@@ -303,50 +290,56 @@ class _MitosisPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final outline = Paint()
+    final center = Offset(size.width / 2, 100);
+    final cellOutline = Paint()
       ..color = const Color(0xFF125C45)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 2.5;
     final chromosome = Paint()
-      ..color = const Color(0xFF7C3AED)
-      ..strokeWidth = 3
+      ..color = const Color(0xFF5B21B6)
+      ..strokeWidth = 3.2
       ..strokeCap = StrokeCap.round;
     final spindle = Paint()
       ..color = const Color(0xFF94A3B8)
       ..strokeWidth = 1.4;
+    final equator = Paint()
+      ..color = const Color(0xFFCBD5E1)
+      ..strokeWidth = 1.2;
 
-    final centers = [
-      Offset(size.width * .13, 82),
-      Offset(size.width * .38, 82),
-      Offset(size.width * .63, 82),
-      Offset(size.width * .87, 82),
-    ];
-    const labels = ['Prophase', 'Metaphase', 'Anaphase', 'Telophase'];
+    final radiusX = size.width < 500 ? size.width * .34 : 175.0;
+    const radiusY = 76.0;
+    final cellRect = Rect.fromCenter(
+      center: center,
+      width: radiusX * 2,
+      height: radiusY * 2,
+    );
+    canvas.drawOval(cellRect, cellOutline);
 
-    for (var i = 0; i < centers.length; i++) {
-      final c = centers[i];
-      canvas.drawCircle(c, 48, outline);
-      if (i == 0) {
-        for (final dx in [-14.0, 0.0, 14.0]) {
-          _drawX(canvas, Offset(c.dx + dx, c.dy), chromosome);
-        }
-      } else if (i == 1) {
-        canvas.drawLine(Offset(c.dx - 38, c.dy), Offset(c.dx + 38, c.dy), spindle);
-        for (final dy in [-18.0, 0.0, 18.0]) {
-          _drawX(canvas, Offset(c.dx, c.dy + dy), chromosome);
-        }
-      } else if (i == 2) {
-        for (final dy in [-16.0, 0.0, 16.0]) {
-          canvas.drawLine(Offset(c.dx - 18, c.dy + dy), Offset(c.dx - 31, c.dy + dy), chromosome);
-          canvas.drawLine(Offset(c.dx + 18, c.dy + dy), Offset(c.dx + 31, c.dy + dy), chromosome);
-        }
-      } else {
-        canvas.drawCircle(Offset(c.dx - 20, c.dy), 17, outline);
-        canvas.drawCircle(Offset(c.dx + 20, c.dy), 17, outline);
-        canvas.drawLine(Offset(c.dx, c.dy - 40), Offset(c.dx, c.dy + 40), spindle);
-      }
-      _paintText(canvas, labels[i], Offset(c.dx, 154), fontSize: 11, bold: true);
+    final leftPole = Offset(center.dx - radiusX + 25, center.dy);
+    final rightPole = Offset(center.dx + radiusX - 25, center.dy);
+    canvas.drawCircle(leftPole, 6, Paint()..color = const Color(0xFF334155));
+    canvas.drawCircle(rightPole, 6, Paint()..color = const Color(0xFF334155));
+
+    canvas.drawLine(
+      Offset(center.dx, center.dy - 62),
+      Offset(center.dx, center.dy + 62),
+      equator,
+    );
+
+    for (final dy in [-40.0, -20.0, 0.0, 20.0, 40.0]) {
+      final chromosomeCenter = Offset(center.dx, center.dy + dy);
+      canvas.drawLine(leftPole, chromosomeCenter, spindle);
+      canvas.drawLine(rightPole, chromosomeCenter, spindle);
+      _drawX(canvas, chromosomeCenter, chromosome);
     }
+
+    _paintText(
+      canvas,
+      'Chromosomes aligned at the cell equator',
+      Offset(center.dx, 197),
+      fontSize: 11,
+      bold: true,
+    );
   }
 
   void _drawX(Canvas canvas, Offset center, Paint paint) {
@@ -385,10 +378,10 @@ class _VelocityTimePainter extends CustomPainter {
     final grid = Paint()
       ..color = const Color(0xFFE2E8F0)
       ..strokeWidth = 1;
-    final curve = Paint()
+    final graph = Paint()
       ..color = const Color(0xFF125C45)
       ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
+      ..strokeCap = StrokeCap.round;
 
     final left = 56.0;
     final bottom = size.height - 38;
@@ -407,28 +400,26 @@ class _VelocityTimePainter extends CustomPainter {
     canvas.drawLine(Offset(left, bottom), Offset(right, bottom), axis);
     canvas.drawLine(Offset(left, bottom), Offset(left, top), axis);
 
-    Offset point(double t, double v) {
-      final x = left + (right - left) * (t / 12);
-      final y = bottom - (bottom - top) * (v / 10);
-      return Offset(x, y);
-    }
+    final start = Offset(left, bottom);
+    final end = Offset(right - 35, top + 28);
+    canvas.drawLine(start, end, graph);
+    canvas.drawCircle(start, 4.5, Paint()..color = const Color(0xFF125C45));
+    canvas.drawCircle(end, 4.5, Paint()..color = const Color(0xFF125C45));
 
-    final path = Path()
-      ..moveTo(point(0, 0).dx, point(0, 0).dy)
-      ..lineTo(point(4, 8).dx, point(4, 8).dy)
-      ..lineTo(point(8, 8).dx, point(8, 8).dy)
-      ..lineTo(point(12, 0).dx, point(12, 0).dy);
-    canvas.drawPath(path, curve);
-
-    for (final t in [0, 4, 8, 12]) {
-      _paintText(canvas, '$t', Offset(point(t.toDouble(), 0).dx, bottom + 17), fontSize: 10);
-    }
-    for (final v in [0, 4, 8]) {
-      _paintText(canvas, '$v', Offset(left - 22, point(0, v.toDouble()).dy), fontSize: 10);
-    }
-
-    _paintText(canvas, 'Time (s)', Offset((left + right) / 2, size.height - 8), fontSize: 11, bold: true);
-    _paintText(canvas, 'Velocity (m/s)', const Offset(45, 8), fontSize: 11, bold: true);
+    _paintText(
+      canvas,
+      'Time (s)',
+      Offset((left + right) / 2, size.height - 8),
+      fontSize: 11,
+      bold: true,
+    );
+    _paintText(
+      canvas,
+      'Velocity',
+      const Offset(33, 10),
+      fontSize: 11,
+      bold: true,
+    );
   }
 
   @override
