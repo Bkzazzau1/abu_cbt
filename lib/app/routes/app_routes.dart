@@ -8,6 +8,7 @@ abstract class Routes {
   static const centerPortal = '/center-portal';
   static const centerExamInstruction = '/center-exam-instruction';
   static const centerExamConfirmation = '/center-exam-confirmation';
+  static const centerExamFingerprint = '/center-exam-fingerprint';
   static const centerExamRun = '/center-exam-run';
   static const centerExamSubmit = '/center-exam-submit';
 
