@@ -1,4 +1,3 @@
-import 'package:abu_zaria_cbt/modules/auth/fingerprint_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,21 +36,9 @@ void main() {
     'different students receive their own identity and course sessions',
     () async {
       final auth = DemoAuth.instance;
-      expect(
-        auth.completeStudentFingerprint(
-          'ABU/CSC/001',
-          FingerprintResult.matched,
-        ),
-        isTrue,
-      );
+      expect(auth.beginStudentSession('ABU/CSC/001'), isTrue);
       expect(auth.student!.candidate.fullName, 'Zainab Musa');
-      expect(
-        auth.completeStudentFingerprint(
-          'ABU/MTH/004',
-          FingerprintResult.matched,
-        ),
-        isTrue,
-      );
+      expect(auth.beginStudentSession('ABU/MTH/004'), isTrue);
       expect(auth.student!.candidate.registrationNumber, 'ABU/MTH/004');
       expect(auth.student!.candidate.fullName, 'Ibrahim Bashir Yahaya');
       expect(auth.student!.exams, isNotEmpty);
@@ -66,12 +53,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(Get.currentRoute, Routes.centerLogin);
       await tester.runAsync(
-        () => Future.value(
-          DemoAuth.instance.completeStudentFingerprint(
-            'ABU/MTH/004',
-            FingerprintResult.matched,
-          ),
-        ),
+        () =>
+            Future.value(DemoAuth.instance.beginStudentSession('ABU/MTH/004')),
       );
       await DemoAuth.instance.openWorkspace();
       await tester.pumpAndSettle();
@@ -79,8 +62,8 @@ void main() {
       expect(find.text('Zainab Musa'), findsNothing);
       Get.toNamed(Routes.invigilatorDashboard);
       await tester.pumpAndSettle();
-      expect(Get.currentRoute, Routes.demo);
-      await tester.tap(find.byTooltip('Sign out'));
+      expect(Get.currentRoute, Routes.centerPortal);
+      await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
       expect(DemoAuth.instance.account, isNull);
       expect(DemoAuth.instance.student, isNull);

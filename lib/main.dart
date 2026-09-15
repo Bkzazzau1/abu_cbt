@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_quill/flutter_quill.dart'
+    show FlutterQuillLocalizations;
 import 'package:get/get.dart';
 
 import 'app/routes/app_pages.dart';
@@ -24,6 +27,13 @@ class CenterExamApp extends StatelessWidget {
       initialRoute: Routes.centerLogin,
       getPages: AppPages.routes,
       theme: KsTheme.darkAcademic,
+      localizationsDelegates: const [
+        FlutterQuillLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('en')],
     );
   }
 }

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/center_exam_models.dart';
 import '../../../data/models/workstation_models.dart';
 import '../../../data/services/network_health_service.dart';
+import '../../demo/abu_demo_theme.dart';
 import '../controller/center_exam_run_controller.dart';
 import '../models/whiteboard_models.dart';
 import '../widgets/multi_format_question_renderer.dart';
@@ -18,116 +17,142 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final network = Get.isRegistered<NetworkHealthService>()
         ? Get.find<NetworkHealthService>()
         : null;
 
-    return Scaffold(
-      bottomNavigationBar: Obx(
-        () => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              'Camera monitoring: ${controller.objectDetectionStatus.value}',
-              textAlign: TextAlign.center,
+    return Theme(
+      data: abuDemoTheme(),
+      child: Builder(
+        builder: (context) {
+          final cs = Theme.of(context).colorScheme;
+          return Scaffold(
+            backgroundColor: abuCanvas,
+            bottomNavigationBar: Obx(
+              () => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(
+                    'Camera monitoring: ${controller.objectDetectionStatus.value}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: abuMuted),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-      extendBodyBehindAppBar: true,
-      body: Obx(() {
-        if (controller.isLoadingExam.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final exam = controller.exam.value;
-        if (exam == null) {
-          return Center(
-            child: Text(
-              controller.examLoadError.value.isEmpty
-                  ? 'No exam loaded.'
-                  : controller.examLoadError.value,
-            ),
-          );
-        }
-
-        final q = controller.currentQuestion;
-        final mm = (controller.secondsLeft.value ~/ 60).toString().padLeft(
-          2,
-          '0',
-        );
-        final ss = (controller.secondsLeft.value % 60).toString().padLeft(
-          2,
-          '0',
-        );
-        final networkStatus =
-            network?.status.value ?? NetworkHealthStatus.online;
-
-        return KsPageShell(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          maxContentWidth: 1600,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final desktop = constraints.maxWidth >= 1080;
-
-              if (!desktop) {
-                return Column(
-                  children: [
-                    _buildUltraCompactHeader(
-                      context,
-                      cs,
-                      exam,
-                      mm,
-                      ss,
-                      networkStatus,
-                    ),
-                    const SizedBox(height: 10),
-                    _buildMobileNavigator(cs),
-                    const SizedBox(height: 10),
-                    Expanded(child: _buildQuestionWorkspace(context, q, cs)),
-                    const SizedBox(height: 8),
-                    _buildActionBar(cs, compact: true),
-                  ],
+            body: Obx(() {
+              if (controller.isLoadingExam.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final exam = controller.exam.value;
+              if (exam == null) {
+                return Center(
+                  child: Text(
+                    controller.examLoadError.value.isEmpty
+                        ? 'No exam loaded.'
+                        : controller.examLoadError.value,
+                  ),
                 );
               }
 
-              return Column(
-                children: [
-                  _buildUltraCompactHeader(
-                    context,
-                    cs,
-                    exam,
-                    mm,
-                    ss,
-                    networkStatus,
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(width: 240, child: _buildSlimNavigator(cs)),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
+              final q = controller.currentQuestion;
+              final mm = (controller.secondsLeft.value ~/ 60)
+                  .toString()
+                  .padLeft(2, '0');
+              final ss = (controller.secondsLeft.value % 60).toString().padLeft(
+                2,
+                '0',
+              );
+              final networkStatus =
+                  network?.status.value ?? NetworkHealthStatus.online;
+
+              return SafeArea(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1600),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final desktop = constraints.maxWidth >= 1080;
+
+                          if (!desktop) {
+                            return Column(
+                              children: [
+                                _buildUltraCompactHeader(
+                                  context,
+                                  cs,
+                                  exam,
+                                  mm,
+                                  ss,
+                                  networkStatus,
+                                ),
+                                const SizedBox(height: 10),
+                                _buildMobileNavigator(cs),
+                                const SizedBox(height: 10),
+                                Expanded(
+                                  child: _buildQuestionWorkspace(
+                                    context,
+                                    q,
+                                    cs,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                _buildActionBar(cs, compact: true),
+                              ],
+                            );
+                          }
+
+                          return Column(
                             children: [
-                              Expanded(
-                                child: _buildQuestionWorkspace(context, q, cs),
+                              _buildUltraCompactHeader(
+                                context,
+                                cs,
+                                exam,
+                                mm,
+                                ss,
+                                networkStatus,
                               ),
                               const SizedBox(height: 12),
-                              _buildActionBar(cs, compact: false),
+                              Expanded(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 240,
+                                      child: _buildSlimNavigator(cs),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          Expanded(
+                                            child: _buildQuestionWorkspace(
+                                              context,
+                                              q,
+                                              cs,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          _buildActionBar(cs, compact: false),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                          ),
-                        ),
-                      ],
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ],
+                ),
               );
-            },
-          ),
-        );
-      }),
+            }),
+          );
+        },
+      ),
     );
   }
 
@@ -139,8 +164,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
     String ss,
     NetworkHealthStatus networkStatus,
   ) {
-    return GlassCard(
-      tone: GlassCardTone.primary,
+    return _Card(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Row(
         children: [
@@ -190,7 +214,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
   }
 
   Widget _buildSlimNavigator(ColorScheme cs) {
-    return GlassCard(
+    return _Card(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +286,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
   }
 
   Widget _buildMobileNavigator(ColorScheme cs) {
-    return GlassCard(
+    return _Card(
       padding: const EdgeInsets.all(12),
       child: Wrap(
         spacing: 8,
@@ -308,7 +332,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
     CenterQuestion q,
     ColorScheme cs,
   ) {
-    return GlassCard(
+    return _Card(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,13 +356,6 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
               ),
             ),
           ),
-          if (_requiresManualReview(q)) ...[
-            const SizedBox(height: 12),
-            const _MetaChip(
-              label: 'Manual review required for this question.',
-              tone: KsStatusChipTone.warningSoft,
-            ),
-          ],
         ],
       ),
     );
@@ -358,7 +375,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
           ),
         ),
         const SizedBox(width: 12),
-        _MetaChip(label: 'UNANSWERED: ${controller.unansweredCount}'),
+        KsStatusChip(label: 'UNANSWERED: ${controller.unansweredCount}'),
         const Spacer(),
         IconButton.filledTonal(
           onPressed: controller.toggleFlagCurrentQuestion,
@@ -377,7 +394,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
 
   Widget _buildActionBar(ColorScheme cs, {required bool compact}) {
     if (compact) {
-      return GlassCard(
+      return _Card(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
@@ -411,7 +428,7 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
       );
     }
 
-    return GlassCard(
+    return _Card(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -485,21 +502,6 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
     );
   }
 
-  bool _requiresManualReview(CenterQuestion q) {
-    switch (q.type) {
-      case CenterQuestionType.essay:
-      case CenterQuestionType.whiteboard:
-      case CenterQuestionType.shortAnswer:
-        return true;
-      case CenterQuestionType.objectiveSingle:
-      case CenterQuestionType.objectiveMultiple:
-      case CenterQuestionType.fillBlank:
-      case CenterQuestionType.dragDrop:
-      case CenterQuestionType.trueFalse:
-        return false;
-    }
-  }
-
   Widget _networkBadge(NetworkHealthStatus status) {
     return KsStatusChip(
       label: status.name.toUpperCase(),
@@ -512,14 +514,19 @@ class CenterExamRunView extends GetView<CenterExamRunController> {
   }
 }
 
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({required this.label, this.tone = KsStatusChipTone.neutral});
+class _Card extends StatelessWidget {
+  const _Card({required this.child, required this.padding});
 
-  final String label;
-  final KsStatusChipTone tone;
+  final Widget child;
+  final EdgeInsetsGeometry padding;
 
   @override
-  Widget build(BuildContext context) {
-    return KsStatusChip(label: label, tone: tone);
-  }
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: const BorderSide(color: abuLine),
+    ),
+    child: Padding(padding: padding, child: child),
+  );
 }

@@ -27,6 +27,27 @@ class OfficialExamSubmitView extends StatelessWidget {
     return '$dd/$mm/${value.year}  $hh:$min';
   }
 
+  int _readInt(Map<String, dynamic> payload, String key) {
+    final value = payload[key];
+    return value is int ? value : int.tryParse('$value') ?? 0;
+  }
+
+  /// Combines the network/workstation risk score with how many local
+  /// integrity monitors (camera/USB) fired during the session into one
+  /// overall rating for the candidate's own receipt. Cross-candidate
+  /// signals (check-in mismatch, answer similarity) are deliberately
+  /// excluded here — those are pending-review findings that belong on the
+  /// invigilator dashboard, not disclosed back to the candidate.
+  (String, Color, Color) _integrityRating(int riskScore, int monitorFlags) {
+    if (riskScore >= 70 || monitorFlags >= 3) {
+      return ('NEEDS REVIEW', const Color(0xFFB42318), const Color(0xFFFFE4E2));
+    }
+    if (riskScore >= 40 || monitorFlags >= 1) {
+      return ('MINOR FLAGS', const Color(0xFF9A650F), const Color(0xFFFFF3CD));
+    }
+    return ('CLEAN', abuGreen, const Color(0xFFEAF3EC));
+  }
+
   @override
   Widget build(BuildContext context) {
     final payload = _payload();
@@ -40,6 +61,21 @@ class OfficialExamSubmitView extends StatelessWidget {
     final workstationId = (payload['workstationId'] ?? '').toString();
     final hallName = (payload['hallName'] ?? '').toString();
     final seatNumber = (payload['seatNumber'] ?? '').toString();
+    final workstationApproved = payload['workstationApproved'] == true;
+    final clientIp = (payload['clientIpAddress'] ?? '').toString();
+    final expectedRange = (payload['expectedHallIpRange'] ?? '').toString();
+    final ipInRange = payload['ipInExpectedRange'] != false;
+    final riskScore = _readInt(payload, 'riskScore');
+    final riskLevel = (payload['riskLevel'] ?? 'low').toString();
+    final riskReasons = (payload['riskReasons'] as List<dynamic>? ?? const [])
+        .map((e) => e.toString())
+        .where((e) => e.trim().isNotEmpty)
+        .toList();
+    final monitorFlagCount = _readInt(payload, 'monitorFlagCount');
+    final (integrityLabel, integrityFg, integrityBg) = _integrityRating(
+      riskScore,
+      monitorFlagCount,
+    );
 
     return Theme(
       data: abuDemoTheme(),
@@ -112,6 +148,26 @@ class OfficialExamSubmitView extends StatelessWidget {
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
+                              const SizedBox(height: 14),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: integrityBg,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  'INTEGRITY: $integrityLabel',
+                                  style: TextStyle(
+                                    color: integrityFg,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ),
                               const SizedBox(height: 26),
                               const Divider(color: abuLine),
                               const SizedBox(height: 10),
@@ -140,6 +196,66 @@ class OfficialExamSubmitView extends StatelessWidget {
                                 _ReceiptRow('Seat', seatNumber),
                               if (workstationId.isNotEmpty)
                                 _ReceiptRow('Workstation', workstationId),
+                              const SizedBox(height: 10),
+                              const Divider(color: abuLine),
+                              const SizedBox(height: 10),
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'SECURITY & INTEGRITY',
+                                  style: TextStyle(
+                                    color: abuMuted,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              _ReceiptRow(
+                                'Workstation whitelisted',
+                                workstationApproved ? 'Yes' : 'No',
+                                warning: !workstationApproved,
+                              ),
+                              if (clientIp.isNotEmpty)
+                                _ReceiptRow('Client IP', clientIp),
+                              if (clientIp.isNotEmpty)
+                                _ReceiptRow(
+                                  'Hall IP range',
+                                  expectedRange.isEmpty
+                                      ? 'Unconfigured'
+                                      : '$expectedRange'
+                                            '${ipInRange ? ' (match)' : ' (mismatch)'}',
+                                  warning: !ipInRange,
+                                ),
+                              _ReceiptRow(
+                                'Risk severity',
+                                '${riskLevel.toUpperCase()} ($riskScore%)',
+                                warning: riskScore >= 40,
+                              ),
+                              if (monitorFlagCount > 0)
+                                _ReceiptRow(
+                                  'Monitoring notices',
+                                  '$monitorFlagCount recorded · pending officer review',
+                                  warning: true,
+                                ),
+                              if (riskReasons.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                ...riskReasons.map(
+                                  (reason) => Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      '• $reason',
+                                      style: const TextStyle(
+                                        color: Color(0xFF9A650F),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

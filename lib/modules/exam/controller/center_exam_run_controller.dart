@@ -21,6 +21,7 @@ import '../../../data/services/seat_question_order_service.dart';
 import '../../../data/services/usb_monitor_service.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 import '../../../data/services/workstation_service.dart';
+import '../models/essay_answer_codec.dart';
 import '../models/whiteboard_models.dart';
 import '../../demo/abu_demo_theme.dart';
 import '../../portal/controller/center_exam_portal_controller.dart';
@@ -720,6 +721,10 @@ class CenterExamRunController extends GetxController {
         'riskLevel': risk.riskLevel,
         'workstationApproved': risk.workstationApproved,
         'securityHeader': _buildSecurityHeader(risk),
+        // A count only, not the flag text itself — the specifics (what was
+        // detected, when) belong on the invigilator dashboard for review,
+        // not on the candidate's own receipt.
+        'monitorFlagCount': _monitorFlags.length,
       },
     );
     await WorkstationService.markSubmission(risk.registration.workstationId);
@@ -746,8 +751,22 @@ class CenterExamRunController extends GetxController {
     final candidate = Get.isRegistered<CenterExamPortalController>()
         ? Get.find<CenterExamPortalController>().candidate.value
         : null;
+    final questionTypes = <String, CenterQuestionType>{
+      for (final q in examValue.questions) q.id: q.type,
+    };
 
     for (final answer in textAnswers) {
+      // Essay answers are stored as Quill Delta JSON (rich formatting) —
+      // the similarity check must compare actual words, not markup, or
+      // two candidates with identical text but different formatting (or
+      // vice versa) would be scored on JSON structure instead of content.
+      final isEssay =
+          questionTypes[answer.questionId] == CenterQuestionType.essay;
+      final text = isEssay
+          ? essayAnswerToPlainText(answer.textAnswer!)
+          : answer.textAnswer!.trim();
+      if (text.isEmpty) continue;
+
       wsService.sendAnswerSubmission(
         registrationNumber: candidate?.registrationNumber ?? '',
         candidateName: candidate?.fullName ?? '',
@@ -755,7 +774,7 @@ class CenterExamRunController extends GetxController {
         seatNumber: risk.registration.seatNumber,
         examId: examValue.id,
         questionId: answer.questionId,
-        textAnswer: answer.textAnswer!.trim(),
+        textAnswer: text,
       );
     }
   }
