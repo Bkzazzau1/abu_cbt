@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../data/models/attendance_models.dart';
 import '../../../data/models/candidate_action_models.dart';
 import '../../../data/models/checkin_models.dart';
+import '../../../data/models/exam_control_audit_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
 import '../../../data/models/seat_map_models.dart';
+import '../../../data/services/attendance_demo_store.dart';
+import '../../../data/services/exam_reporting_store.dart';
 import '../../../data/services/invigilator_demo_store.dart';
+import '../../../data/services/invigilator_session.dart';
 
 class CandidateActionPanelController extends GetxController {
   final contextRecord = Rxn<CandidateActionContext>();
@@ -18,6 +23,8 @@ class CandidateActionPanelController extends GetxController {
   final lastSeatReassignment = Rxn<SeatReassignmentRecord>();
 
   late final InvigilatorDemoStore _demoStore;
+  late final AttendanceDemoStore _attendanceStore;
+  late final ExamReportingStore _reportingStore;
 
   @override
   void onInit() {
@@ -25,9 +32,15 @@ class CandidateActionPanelController extends GetxController {
     _demoStore = Get.isRegistered<InvigilatorDemoStore>()
         ? Get.find<InvigilatorDemoStore>()
         : Get.put(InvigilatorDemoStore(), permanent: true);
+    _attendanceStore = Get.isRegistered<AttendanceDemoStore>()
+        ? Get.find<AttendanceDemoStore>()
+        : Get.put(AttendanceDemoStore(), permanent: true);
+    _reportingStore = Get.isRegistered<ExamReportingStore>()
+        ? Get.find<ExamReportingStore>()
+        : Get.put(ExamReportingStore(), permanent: true);
 
     _buildContext(Get.arguments);
-    _prepareSeatReassignment();
+    _preparePersistentContext();
   }
 
   void _buildContext(dynamic arg) {
@@ -68,7 +81,9 @@ class CandidateActionPanelController extends GetxController {
         candidateName: arg.candidateName,
         registrationNumber: arg.registrationNumber,
         examTitle: arg.examTitle,
-        currentState: CandidateExamControlState.normal,
+        currentState: arg.state == HallCandidateLiveState.submitted
+            ? CandidateExamControlState.forceSubmitted
+            : CandidateExamControlState.normal,
         note: '',
       );
       return;
@@ -80,12 +95,42 @@ class CandidateActionPanelController extends GetxController {
     }
   }
 
-  Future<void> _prepareSeatReassignment() async {
+  Future<void> _preparePersistentContext() async {
     await _demoStore.ensureLoaded();
+    await _attendanceStore.ensureLoaded();
+    _reportingStore.ensureSeeded();
+
     final current = contextRecord.value;
     if (current == null || current.registrationNumber.isEmpty) return;
+
     lastSeatReassignment.value =
         _demoStore.latestReassignmentFor(current.registrationNumber);
+
+    final attendance =
+        _attendanceStore.findByRegistration(current.registrationNumber);
+    if (attendance?.state == AttendanceState.submitted) {
+      contextRecord.value = current.copyWith(
+        currentState: CandidateExamControlState.forceSubmitted,
+      );
+      return;
+    }
+
+    ExamControlAuditRecord? latest;
+    for (final event in _reportingStore.examControlEvents) {
+      if (event.registrationNumber != current.registrationNumber ||
+          event.examTitle != current.examTitle) {
+        continue;
+      }
+      if (latest == null || event.createdAt.isAfter(latest.createdAt)) {
+        latest = event;
+      }
+    }
+
+    if (latest != null) {
+      contextRecord.value = current.copyWith(
+        currentState: _controlStateFor(latest.type),
+      );
+    }
   }
 
   List<SeatMapRecord> get availableDestinationSeats {
@@ -138,6 +183,7 @@ class CandidateActionPanelController extends GetxController {
     }
     await _runAction(
       nextState: CandidateExamControlState.paused,
+      auditType: ExamControlAuditType.paused,
       message: 'Candidate exam paused.',
     );
   }
@@ -153,6 +199,7 @@ class CandidateActionPanelController extends GetxController {
     }
     await _runAction(
       nextState: CandidateExamControlState.resumed,
+      auditType: ExamControlAuditType.resumed,
       message: 'Candidate exam resumed.',
     );
   }
@@ -164,6 +211,7 @@ class CandidateActionPanelController extends GetxController {
     }
     await _runAction(
       nextState: CandidateExamControlState.forceSubmitted,
+      auditType: ExamControlAuditType.forceSubmitted,
       message: 'Candidate exam force-submitted.',
     );
   }
@@ -175,6 +223,7 @@ class CandidateActionPanelController extends GetxController {
     }
     await _runAction(
       nextState: CandidateExamControlState.lateEntryAllowed,
+      auditType: ExamControlAuditType.lateEntryAllowed,
       message: 'Late entry allowed for candidate.',
     );
   }
@@ -186,15 +235,15 @@ class CandidateActionPanelController extends GetxController {
 
     if (current == null) return false;
     if (isForceSubmitted) {
-      _showError('A submitted candidate cannot be moved to another seat.');
+      _showError('A submitted candidate cannot be moved to another workstation.');
       return false;
     }
     if (newSeat.isEmpty) {
-      _showError('Select an available destination seat.');
+      _showError('Select an available destination workstation.');
       return false;
     }
     if (reason == null) {
-      _showError('Select the reason for this seat reassignment.');
+      _showError('Select the reason for this workstation reassignment.');
       return false;
     }
     if (reason == SeatReassignmentReason.other &&
@@ -223,7 +272,7 @@ class CandidateActionPanelController extends GetxController {
       selectedReassignmentReason.value = null;
 
       Get.snackbar(
-        'Seat Reassigned',
+        'Workstation Reassigned',
         '${event.candidateName} moved from ${event.oldSeatNumber} to '
         '${event.newSeatNumber}. Exam context preserved.',
         snackPosition: SnackPosition.BOTTOM,
@@ -233,7 +282,7 @@ class CandidateActionPanelController extends GetxController {
       _showError(error.message.toString());
       return false;
     } catch (_) {
-      _showError('The seat could not be reassigned. Please try again.');
+      _showError('The workstation could not be reassigned. Please try again.');
       return false;
     } finally {
       isProcessing.value = false;
@@ -242,6 +291,7 @@ class CandidateActionPanelController extends GetxController {
 
   Future<void> _runAction({
     required CandidateExamControlState nextState,
+    required ExamControlAuditType auditType,
     required String message,
   }) async {
     final current = contextRecord.value;
@@ -250,10 +300,40 @@ class CandidateActionPanelController extends GetxController {
     isProcessing.value = true;
     try {
       await Future.delayed(const Duration(milliseconds: 500));
+      final now = DateTime.now();
+      final reviewer = InvigilatorSession.currentName.trim().isEmpty
+          ? 'Invigilator'
+          : InvigilatorSession.currentName.trim();
+
       contextRecord.value = current.copyWith(
         currentState: nextState,
         note: noteController.text.trim(),
       );
+
+      _reportingStore.addExamControlEvent(
+        ExamControlAuditRecord(
+          id: 'CTRL-${now.microsecondsSinceEpoch}',
+          registrationNumber: current.registrationNumber,
+          candidateName: current.candidateName,
+          examTitle: current.examTitle,
+          hallName: current.hallName,
+          seatNumber: current.seatNumber,
+          workstationId: current.workstationId,
+          type: auditType,
+          createdAt: now,
+          actedBy: reviewer,
+          note: noteController.text.trim(),
+        ),
+      );
+
+      if (auditType == ExamControlAuditType.forceSubmitted &&
+          current.registrationNumber.isNotEmpty) {
+        await _attendanceStore.ensureLoaded();
+        _attendanceStore.setState(
+          current.registrationNumber,
+          AttendanceState.submitted,
+        );
+      }
 
       Get.snackbar(
         'Action Completed',
@@ -265,9 +345,22 @@ class CandidateActionPanelController extends GetxController {
     }
   }
 
+  CandidateExamControlState _controlStateFor(ExamControlAuditType type) {
+    switch (type) {
+      case ExamControlAuditType.paused:
+        return CandidateExamControlState.paused;
+      case ExamControlAuditType.resumed:
+        return CandidateExamControlState.resumed;
+      case ExamControlAuditType.lateEntryAllowed:
+        return CandidateExamControlState.lateEntryAllowed;
+      case ExamControlAuditType.forceSubmitted:
+        return CandidateExamControlState.forceSubmitted;
+    }
+  }
+
   void _showError(String message) {
     Get.snackbar(
-      'Seat Reassignment',
+      'Workstation Reassignment',
       message,
       snackPosition: SnackPosition.BOTTOM,
     );
