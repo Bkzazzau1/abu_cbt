@@ -30,7 +30,12 @@ import time
 
 
 class DetectionGate:
-    """Require two consecutive samples; rate-limit continuing detections."""
+    """Require two consecutive samples; rate-limit repeated alerts only
+    while the *same* phone stays continuously in view. The cooldown resets
+    the moment a sample drops below threshold (the phone left the frame),
+    so putting it away and showing it again always re-arms immediately —
+    the cooldown is purely an anti-spam measure for one sustained sighting,
+    not a per-exam "only once" limit."""
 
     def __init__(self, threshold=0.5, cooldown=30.0):
         self.threshold = threshold
@@ -40,7 +45,11 @@ class DetectionGate:
 
     def update(self, confidence, now):
         valid = math.isfinite(confidence) and self.threshold <= confidence <= 1
-        self.hits = min(2, self.hits + 1) if valid else 0
+        if not valid:
+            self.hits = 0
+            self.last_alert = -math.inf
+            return False
+        self.hits = min(2, self.hits + 1)
         if self.hits >= 2 and now - self.last_alert >= self.cooldown:
             self.last_alert = now
             return True

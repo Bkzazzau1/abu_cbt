@@ -21,6 +21,19 @@ class DetectionTests(unittest.TestCase):
         self.assertFalse(gate.update(0.9, 12))
         self.assertTrue(gate.update(0.9, 39))
 
+    def test_removing_and_reshowing_the_phone_reflags_immediately(self):
+        # A dismissed alert should not silence the rest of the exam: once
+        # the phone drops out of view (a single low-confidence sample),
+        # showing it again must flag again right away, ignoring the
+        # cooldown that only exists to stop one continuous sighting from
+        # popping repeatedly.
+        gate = DetectionGate(cooldown=30.0)
+        self.assertFalse(gate.update(0.9, 0))
+        self.assertTrue(gate.update(0.9, 1))
+        self.assertFalse(gate.update(0.0, 2))
+        self.assertFalse(gate.update(0.9, 3))
+        self.assertTrue(gate.update(0.9, 4))
+
     def test_low_confidence_and_non_finite_values_never_flag(self):
         for confidence in [0, 0.49, float('nan'), float('inf'), 1.1]:
             gate = DetectionGate()
