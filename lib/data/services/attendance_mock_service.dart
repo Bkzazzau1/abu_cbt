@@ -38,8 +38,12 @@ class AttendanceMockService {
       final identity = _identityForSeat(seat, state);
       final name = _candidateNames[(offset + index) % _candidateNames.length];
       final arrival = _arrivalForState(state, seat);
-      final confidence = _confidenceFor(identity, seat);
+      final manualVerified = hallName == 'Hall A' && seat == 26;
+      final confidence = manualVerified ? 0 : _confidenceFor(identity, seat);
       final hasWorkstationBinding = _hasWorkstationBinding(state);
+      final manualVerifiedAt = manualVerified
+          ? DateTime.now().subtract(const Duration(minutes: 23))
+          : null;
 
       return AttendanceRecord(
         candidateName: name,
@@ -57,7 +61,14 @@ class AttendanceMockService {
         identityState: identity,
         biometricConfidence: confidence,
         arrivalTimeLabel: arrival,
-        verificationNote: _noteFor(identity, seat),
+        verificationNote: manualVerified
+            ? 'Fingerprint reader could not complete verification. University record and physical ID were manually confirmed by the invigilator.'
+            : _noteFor(identity, seat),
+        manualIdentityVerified: manualVerified,
+        manualVerifiedBy: manualVerified ? 'Amina Yusuf' : '',
+        manualVerificationAuditId:
+            manualVerified ? 'IDV-DEMO-APPROVED-001' : '',
+        manualVerifiedAt: manualVerifiedAt,
       );
     });
   }
