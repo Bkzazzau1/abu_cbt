@@ -1,8 +1,11 @@
 import 'dart:math';
 
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/attendance_models.dart';
 import '../models/workstation_models.dart';
+import 'attendance_demo_store.dart';
 
 class WorkstationService {
   static const _key = 'center_exam.workstation_registration';
@@ -99,6 +102,49 @@ class WorkstationService {
     );
     await save(updated);
     return updated;
+  }
+
+  /// Legacy compatibility bridge used by the exam-run controller.
+  ///
+  /// This method intentionally does NOT derive or change the physical seat
+  /// from Attendance. By the time CenterExamRun starts, candidate login has
+  /// already bound the candidate to the registered workstation and identity
+  /// verification has passed. We therefore return the existing physical
+  /// registration and record the admission transition to In Exam.
+  static Future<WorkstationRegistration> ensureAssignmentFromAttendance({
+    required String candidateRegistrationNumber,
+  }) async {
+    final registration = await touchLastSeen();
+
+    try {
+      final store = Get.isRegistered<AttendanceDemoStore>()
+          ? Get.find<AttendanceDemoStore>()
+          : Get.put(AttendanceDemoStore(), permanent: true);
+      await store.ensureLoaded();
+      final attendance = store.findByRegistration(candidateRegistrationNumber);
+      if (attendance != null &&
+          attendance.state != AttendanceState.submitted &&
+          attendance.state != AttendanceState.absent &&
+          attendance.state != AttendanceState.issueFlagged) {
+        store.updateRecord(
+          attendance.copyWith(
+            hallName: registration.hallName.isEmpty
+                ? attendance.hallName
+                : registration.hallName,
+            seatNumber: registration.seatNumber.isEmpty
+                ? attendance.seatNumber
+                : registration.seatNumber,
+            workstationId: registration.workstationId,
+            state: AttendanceState.inExam,
+          ),
+        );
+      }
+    } catch (_) {
+      // Demo attendance synchronization must never stop the actual exam from
+      // opening after identity clearance. Production uses hall-server events.
+    }
+
+    return registration;
   }
 
   // FRONTEND MOCK:
