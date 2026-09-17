@@ -54,8 +54,9 @@ class CandidateActionPanelController extends GetxController {
         registrationNumber: arg.registrationNumber,
         examTitle: arg.examTitle,
         currentState: CandidateExamControlState.normal,
-        note: '',
+        note: arg.note,
       );
+      noteController.text = arg.note;
       return;
     }
 
@@ -70,6 +71,12 @@ class CandidateActionPanelController extends GetxController {
         currentState: CandidateExamControlState.normal,
         note: '',
       );
+      return;
+    }
+
+    if (arg is CandidateActionContext) {
+      contextRecord.value = arg;
+      noteController.text = arg.note;
     }
   }
 
@@ -94,8 +101,21 @@ class CandidateActionPanelController extends GetxController {
     return _demoStore.findSeat(current.hallName, selected);
   }
 
+  CandidateExamControlState? get currentState => contextRecord.value?.currentState;
+  bool get isExamPaused => currentState == CandidateExamControlState.paused;
+  bool get isForceSubmitted =>
+      currentState == CandidateExamControlState.forceSubmitted;
+
+  bool get canPauseExam =>
+      !isProcessing.value && !isExamPaused && !isForceSubmitted;
+  bool get canResumeExam =>
+      !isProcessing.value && isExamPaused && !isForceSubmitted;
+  bool get canAllowLateEntry => !isProcessing.value && !isForceSubmitted;
+  bool get canForceSubmit => !isProcessing.value && !isForceSubmitted;
+
   bool get canReassignSeat =>
       !isProcessing.value &&
+      !isForceSubmitted &&
       selectedDestinationSeat.value.isNotEmpty &&
       selectedReassignmentReason.value != null;
 
@@ -108,6 +128,14 @@ class CandidateActionPanelController extends GetxController {
   }
 
   Future<void> pauseExam() async {
+    if (!canPauseExam) {
+      _showControlError(
+        isForceSubmitted
+            ? 'This exam has already been submitted.'
+            : 'The candidate exam is already paused.',
+      );
+      return;
+    }
     await _runAction(
       nextState: CandidateExamControlState.paused,
       message: 'Candidate exam paused.',
@@ -115,6 +143,14 @@ class CandidateActionPanelController extends GetxController {
   }
 
   Future<void> resumeExam() async {
+    if (!canResumeExam) {
+      _showControlError(
+        isForceSubmitted
+            ? 'A submitted exam cannot be resumed.'
+            : 'Pause the candidate exam before using Resume.',
+      );
+      return;
+    }
     await _runAction(
       nextState: CandidateExamControlState.resumed,
       message: 'Candidate exam resumed.',
@@ -122,6 +158,10 @@ class CandidateActionPanelController extends GetxController {
   }
 
   Future<void> forceSubmit() async {
+    if (!canForceSubmit) {
+      _showControlError('This exam has already been submitted.');
+      return;
+    }
     await _runAction(
       nextState: CandidateExamControlState.forceSubmitted,
       message: 'Candidate exam force-submitted.',
@@ -129,6 +169,10 @@ class CandidateActionPanelController extends GetxController {
   }
 
   Future<void> allowLateEntry() async {
+    if (!canAllowLateEntry) {
+      _showControlError('Late entry cannot be enabled after submission.');
+      return;
+    }
     await _runAction(
       nextState: CandidateExamControlState.lateEntryAllowed,
       message: 'Late entry allowed for candidate.',
@@ -141,6 +185,10 @@ class CandidateActionPanelController extends GetxController {
     final reason = selectedReassignmentReason.value;
 
     if (current == null) return false;
+    if (isForceSubmitted) {
+      _showError('A submitted candidate cannot be moved to another seat.');
+      return false;
+    }
     if (newSeat.isEmpty) {
       _showError('Select an available destination seat.');
       return false;
@@ -220,6 +268,14 @@ class CandidateActionPanelController extends GetxController {
   void _showError(String message) {
     Get.snackbar(
       'Seat Reassignment',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  void _showControlError(String message) {
+    Get.snackbar(
+      'Candidate Controls',
       message,
       snackPosition: SnackPosition.BOTTOM,
     );
