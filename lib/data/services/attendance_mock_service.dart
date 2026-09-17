@@ -77,8 +77,13 @@ class AttendanceMockService {
     return AttendanceState.inExam;
   }
 
+  /// Check-in and authorization are identity/admission states, not evidence
+  /// that a candidate owns a physical seat. Only a candidate who has actually
+  /// entered the exam (or already submitted it) starts with a workstation
+  /// binding in the demo data.
   static bool _hasWorkstationBinding(AttendanceState state) {
-    return state != AttendanceState.expected && state != AttendanceState.absent;
+    return state == AttendanceState.inExam ||
+        state == AttendanceState.submitted;
   }
 
   static IdentityVerificationState _identityForSeat(
