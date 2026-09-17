@@ -35,23 +35,42 @@ class SeatMapMockService {
     return List.generate(48, (index) {
       final seatIndex = index + 1;
       final seatNumber = '$seatPrefix-${seatIndex.toString().padLeft(2, '0')}';
+      final registrationNumber =
+          '$registrationPrefix/${(offset + seatIndex).toString().padLeft(3, '0')}';
       final state = _stateForSeat(seatIndex);
       final hasCandidate = _stateHasActiveBinding(state);
       final nameIndex = (offset + index) % _candidateNames.length;
+      final candidateName =
+          _candidateNameFor(registrationNumber, _candidateNames[nameIndex]);
 
       return SeatMapRecord(
         hallName: hallName,
         seatNumber: seatNumber,
-        candidateName: hasCandidate ? _candidateNames[nameIndex] : '',
-        registrationNumber: hasCandidate
-            ? '$registrationPrefix/${(offset + seatIndex).toString().padLeft(3, '0')}'
-            : '',
+        candidateName: hasCandidate ? candidateName : '',
+        registrationNumber: hasCandidate ? registrationNumber : '',
         examTitle: hasCandidate ? examTitle : '',
         workstationId:
             '$workstationPrefix${seatIndex.toString().padLeft(2, '0')}-WS',
         state: state,
       );
     });
+  }
+
+  static String _candidateNameFor(String registrationNumber, String fallback) {
+    switch (registrationNumber.toUpperCase()) {
+      case 'ABU/CSC/001':
+        return 'Zainab Musa';
+      case 'ABU/CSC/008':
+        return 'Sadiq Lawal';
+      case 'ABU/GST/055':
+        return 'Abubakar Sani';
+      case 'ABU/GST/060':
+        return 'Hauwa Ibrahim';
+      case 'ABU/GST/069':
+        return 'Habiba Musa';
+      default:
+        return fallback;
+    }
   }
 
   /// This map represents physical workstations, not permanent student seats.
