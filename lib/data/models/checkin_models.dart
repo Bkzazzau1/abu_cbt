@@ -36,11 +36,18 @@ class CandidateCheckInRecord {
   final String note;
   final IdentityVerificationState identityState;
   final double biometricConfidence;
+
+  /// Retained for compatibility with older demo records. Seat confirmation is
+  /// no longer required for admission because workstation allocation is a
+  /// separate exam-session policy (Free, Manual, or System Distribution).
   final bool seatVerified;
   final bool examVerified;
 
-  bool get identityVerified => identityState == IdentityVerificationState.matched;
-  bool get canAuthorize => identityVerified && seatVerified && examVerified;
+  bool get identityVerified =>
+      identityState == IdentityVerificationState.matched;
+  bool get hasWorkstationAssignment =>
+      seatNumber.trim().isNotEmpty && workstationId.trim().isNotEmpty;
+  bool get canAuthorize => identityVerified && examVerified;
   bool get needsAttention =>
       status == CandidateCheckInStatus.issueFlagged ||
       identityState == IdentityVerificationState.mismatch ||
