@@ -21,6 +21,7 @@ import '../../modules/invigilator/controller/invigilator_login_controller.dart';
 import '../../modules/invigilator/controller/malpractice_report_controller.dart';
 import '../../modules/invigilator/controller/seat_map_controller.dart';
 import '../../modules/invigilator/controller/technical_reports_controller.dart';
+import '../../modules/invigilator/controller/workstation_allocation_controller.dart';
 import '../../modules/invigilator/view/attendance_register_view.dart';
 import '../../modules/invigilator/view/candidate_action_panel_view.dart';
 import '../../modules/invigilator/view/candidate_checkin_view.dart';
@@ -31,6 +32,7 @@ import '../../modules/invigilator/view/invigilator_dashboard_view.dart';
 import '../../modules/invigilator/view/malpractice_report_view.dart';
 import '../../modules/invigilator/view/seat_map_view.dart';
 import '../../modules/invigilator/view/technical_reports_view.dart';
+import '../../modules/invigilator/view/workstation_allocation_view.dart';
 import '../../modules/portal/controller/center_exam_portal_controller.dart';
 
 import '../../modules/workstation/controller/device_blocked_controller.dart';
@@ -204,6 +206,16 @@ class AppPages {
       page: () => const SeatMapView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<SeatMapController>(() => SeatMapController());
+      }),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
+      name: Routes.workstationAllocation,
+      page: () => const WorkstationAllocationView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<WorkstationAllocationController>(
+          () => WorkstationAllocationController(),
+        );
       }),
     ),
     GetPage(
