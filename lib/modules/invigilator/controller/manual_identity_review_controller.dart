@@ -119,8 +119,12 @@ class ManualIdentityReviewController extends GetxController {
       final attendance =
           _attendanceStore.findByRegistration(approved.registrationNumber);
       if (attendance != null) {
+        final nextState = attendance.state == AttendanceState.issueFlagged
+            ? AttendanceState.checkedIn
+            : attendance.state;
         _attendanceStore.updateRecord(
           attendance.copyWith(
+            state: nextState,
             identityState: IdentityVerificationState.matched,
             biometricConfidence: attendance.biometricConfidence,
             verificationNote:
