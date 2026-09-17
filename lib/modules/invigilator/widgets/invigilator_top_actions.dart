@@ -8,6 +8,7 @@ List<Widget> buildInvigilatorTopActions({
   bool showDashboard = true,
   bool showSession = true,
   bool showAttendance = true,
+  bool showIdentity = true,
   bool showLiveHall = true,
   bool showSeatMap = false,
   bool showAllocation = true,
@@ -42,6 +43,16 @@ List<Widget> buildInvigilatorTopActions({
         onPressed: () => _goPrimary(Routes.attendanceRegister),
         icon: const Icon(Icons.fact_check_outlined),
         label: const Text('Attendance'),
+      ),
+    );
+  }
+
+  if (showIdentity) {
+    actions.add(
+      TextButton.icon(
+        onPressed: () => _goPrimary(Routes.manualIdentityReview),
+        icon: const Icon(Icons.verified_user_outlined),
+        label: const Text('Identity'),
       ),
     );
   }
