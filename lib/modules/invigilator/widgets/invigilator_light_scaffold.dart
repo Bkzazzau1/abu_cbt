@@ -21,6 +21,7 @@ class InvigilatorLightScaffold extends StatelessWidget {
   static const _primaryWorkspaceRoutes = <String>{
     Routes.examSessionDashboard,
     Routes.attendanceRegister,
+    Routes.manualIdentityReview,
     Routes.hallMonitoring,
     Routes.seatMap,
     Routes.workstationAllocation,
