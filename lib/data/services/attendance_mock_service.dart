@@ -34,9 +34,13 @@ class AttendanceMockService {
   }) {
     return List.generate(48, (index) {
       final seat = index + 1;
+      final registrationNumber =
+          '$registrationPrefix/${(offset + seat).toString().padLeft(3, '0')}';
       final state = _stateForSeat(seat);
       final identity = _identityForSeat(seat, state);
-      final name = _candidateNames[(offset + index) % _candidateNames.length];
+      final fallbackName =
+          _candidateNames[(offset + index) % _candidateNames.length];
+      final name = _candidateNameFor(registrationNumber, fallbackName);
       final arrival = _arrivalForState(state, seat);
       final manualVerified = hallName == 'Hall A' && seat == 26;
       final confidence = manualVerified ? 0 : _confidenceFor(identity, seat);
@@ -47,8 +51,7 @@ class AttendanceMockService {
 
       return AttendanceRecord(
         candidateName: name,
-        registrationNumber:
-            '$registrationPrefix/${(offset + seat).toString().padLeft(3, '0')}',
+        registrationNumber: registrationNumber,
         hallName: hallName,
         seatNumber: hasWorkstationBinding
             ? '$seatPrefix-${seat.toString().padLeft(2, '0')}'
@@ -71,6 +74,17 @@ class AttendanceMockService {
         manualVerifiedAt: manualVerifiedAt,
       );
     });
+  }
+
+  static String _candidateNameFor(String registrationNumber, String fallback) {
+    switch (registrationNumber.toUpperCase()) {
+      case 'ABU/CSC/001':
+        return 'Zainab Musa';
+      case 'ABU/CSC/008':
+        return 'Sadiq Lawal';
+      default:
+        return fallback;
+    }
   }
 
   static AttendanceState _stateForSeat(int seat) {
