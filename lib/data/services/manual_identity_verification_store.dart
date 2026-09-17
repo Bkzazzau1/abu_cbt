@@ -139,6 +139,25 @@ class ManualIdentityVerificationStore extends GetxService {
     return updated;
   }
 
+  ManualIdentityVerificationRequest resolveByFingerprint({
+    required String requestId,
+  }) {
+    final current = _find(requestId);
+    if (current == null) {
+      throw StateError('Identity verification request was not found.');
+    }
+    if (!current.isPending) return current;
+
+    final updated = current.copyWith(
+      status: ManualIdentityVerificationStatus.resolvedByFingerprint,
+      reviewedAt: DateTime.now(),
+      reviewedBy: 'Fingerprint authentication',
+      reviewNote: 'Candidate completed a successful fingerprint retry before manual review.',
+    );
+    _replace(current, updated);
+    return updated;
+  }
+
   ManualIdentityVerificationRequest? _find(String requestId) {
     for (final request in requests) {
       if (request.id == requestId) return request;
