@@ -7,12 +7,10 @@ abstract interface class FingerprintReader {
 
 /// UI demonstration only: no biometric sample is captured or stored.
 ///
-/// Two sample accounts deliberately exercise the exception paths so the ABU
-/// presentation can demonstrate controlled invigilator review without changing
-/// production authentication logic:
-/// - ABU/PHY/003 -> fingerprint not matched
-/// - ABU/CHM/007 -> reader unavailable
-/// All other demo candidates match by default.
+/// ABU/CSC/008 deliberately exercises the exception path so the ABU
+/// presentation can demonstrate fingerprint failure -> invigilator manual
+/// identity review -> audited approval/rejection while remaining inside the
+/// same CSC 305 attendance and General Exam Report dataset.
 class DemoFingerprintReader implements FingerprintReader {
   DemoFingerprintReader({this.useScenarioOutcomes = true});
 
@@ -30,10 +28,8 @@ class DemoFingerprintReader implements FingerprintReader {
     if (!useScenarioOutcomes) return FingerprintResult.matched;
 
     switch (registrationNumber.trim().toUpperCase()) {
-      case 'ABU/PHY/003':
+      case 'ABU/CSC/008':
         return FingerprintResult.notMatched;
-      case 'ABU/CHM/007':
-        return FingerprintResult.unavailable;
       default:
         return FingerprintResult.matched;
     }
