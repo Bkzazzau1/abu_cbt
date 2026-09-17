@@ -6,6 +6,7 @@ import '../../../data/models/checkin_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
 import '../../../data/services/attendance_demo_store.dart';
+import '../../../data/services/invigilator_demo_store.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 
 class CandidateCheckInController extends GetxController {
@@ -13,6 +14,7 @@ class CandidateCheckInController extends GetxController {
   final notesController = TextEditingController();
 
   late final AttendanceDemoStore _attendanceStore;
+  late final InvigilatorDemoStore _invigilatorStore;
 
   @override
   void onInit() {
@@ -20,11 +22,15 @@ class CandidateCheckInController extends GetxController {
     _attendanceStore = Get.isRegistered<AttendanceDemoStore>()
         ? Get.find<AttendanceDemoStore>()
         : Get.put(AttendanceDemoStore(), permanent: true);
+    _invigilatorStore = Get.isRegistered<InvigilatorDemoStore>()
+        ? Get.find<InvigilatorDemoStore>()
+        : Get.put(InvigilatorDemoStore(), permanent: true);
     _initialise(Get.arguments);
   }
 
   Future<void> _initialise(dynamic arg) async {
     await _attendanceStore.ensureLoaded();
+    await _invigilatorStore.ensureLoaded();
 
     if (arg is AttendanceRecord) {
       record.value = _fromAttendance(arg);
@@ -89,7 +95,8 @@ class CandidateCheckInController extends GetxController {
       note: source.verificationNote,
       identityState: source.identityState,
       biometricConfidence: source.biometricConfidence,
-      seatVerified: progressed,
+      seatVerified:
+          source.seatNumber.isNotEmpty && source.workstationId.isNotEmpty,
       examVerified: progressed,
     );
   }
@@ -126,18 +133,40 @@ class CandidateCheckInController extends GetxController {
     _broadcastCheckIn(updated);
     Get.snackbar(
       'Checked In',
-      'Candidate arrival recorded. Complete verification before authorization.',
+      'Candidate arrival recorded. Complete identity and exam verification before authorization.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
 
+  /// Kept for compatibility with older UI/actions. Workstation allocation is
+  /// no longer a prerequisite for candidate verification or authorization.
   void confirmSeat() {
     final current = record.value;
     if (current == null || current.status == CandidateCheckInStatus.pending) {
-      _checkInRequired('assigned seat');
+      _checkInRequired('workstation review');
       return;
     }
-    _applyVerificationProgress(current.copyWith(seatVerified: true));
+
+    final assignment = _invigilatorStore.assignmentForCandidate(
+      registrationNumber: current.registrationNumber,
+      examTitle: current.examTitle,
+    );
+    if (assignment == null) {
+      Get.snackbar(
+        'No workstation assigned',
+        'This is valid in Free Seating. Manual/System allocation can be managed from Workstation Allocation.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    final updated = current.copyWith(
+      hallName: assignment.hallName,
+      seatNumber: assignment.seatNumber,
+      workstationId: assignment.workstationId,
+      seatVerified: true,
+    );
+    record.value = updated;
   }
 
   void confirmExam() {
@@ -216,9 +245,7 @@ class CandidateCheckInController extends GetxController {
   }
 
   void _applyVerificationProgress(CandidateCheckInRecord candidate) {
-    final fullyVerified = candidate.identityVerified &&
-        candidate.seatVerified &&
-        candidate.examVerified;
+    final fullyVerified = candidate.identityVerified && candidate.examVerified;
     final nextStatus = fullyVerified
         ? CandidateCheckInStatus.verified
         : CandidateCheckInStatus.checkedIn;
@@ -241,7 +268,7 @@ class CandidateCheckInController extends GetxController {
         !current.canAuthorize) {
       Get.snackbar(
         'Verification incomplete',
-        'Complete the Verified stage, including identity, assigned seat, and exam allocation, before authorization.',
+        'Complete identity and exam verification before authorization. Workstation allocation is handled separately.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -255,7 +282,7 @@ class CandidateCheckInController extends GetxController {
     _updateAttendance(updated, AttendanceState.authorized);
     Get.snackbar(
       'Authorized',
-      'Candidate authorized to proceed to the examination.',
+      'Candidate is authorized. Workstation access will follow the active allocation policy.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
@@ -263,17 +290,25 @@ class CandidateCheckInController extends GetxController {
   void markInExam() {
     final current = record.value;
     if (current == null) return;
-    if (current.status != CandidateCheckInStatus.authorized &&
-        current.status != CandidateCheckInStatus.inExam) {
+
+    final assignment = _invigilatorStore.assignmentForCandidate(
+      registrationNumber: current.registrationNumber,
+      examTitle: current.examTitle,
+    );
+    if (assignment?.isLocked != true) {
       Get.snackbar(
-        'Authorization Required',
-        'Authorize the candidate before marking them as in exam.',
+        'Workstation login required',
+        'The candidate must successfully log in to a workstation before the In Exam state is recorded.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
 
     final updated = current.copyWith(
+      workstationId: assignment!.workstationId,
+      hallName: assignment.hallName,
+      seatNumber: assignment.seatNumber,
+      seatVerified: true,
       status: CandidateCheckInStatus.inExam,
       note: notesController.text.trim(),
     );
@@ -281,7 +316,7 @@ class CandidateCheckInController extends GetxController {
     _updateAttendance(updated, AttendanceState.inExam);
     Get.snackbar(
       'Candidate In Exam',
-      'Candidate admission is complete and the exam is now active.',
+      'Workstation login confirmed at ${assignment.seatNumber}.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
@@ -342,6 +377,9 @@ class CandidateCheckInController extends GetxController {
     _attendanceStore.updateRecord(
       source.copyWith(
         state: attendanceState,
+        hallName: updated.hallName,
+        seatNumber: updated.seatNumber,
+        workstationId: updated.workstationId,
         identityState: updated.identityState,
         biometricConfidence: updated.biometricConfidence,
         verificationNote: updated.note,
