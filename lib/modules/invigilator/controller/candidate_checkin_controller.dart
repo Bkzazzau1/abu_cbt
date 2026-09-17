@@ -7,6 +7,7 @@ import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
 import '../../../data/services/attendance_demo_store.dart';
 import '../../../data/services/invigilator_demo_store.dart';
+import '../../../data/services/invigilator_session.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 
 class CandidateCheckInController extends GetxController {
@@ -232,14 +233,38 @@ class CandidateCheckInController extends GetxController {
       return;
     }
 
+    final reviewer = InvigilatorSession.currentName.trim().isEmpty
+        ? 'Invigilator'
+        : InvigilatorSession.currentName.trim();
+    final now = DateTime.now();
+    final auditId = 'IDV-CHECKIN-${now.microsecondsSinceEpoch}';
+    final manualNote =
+        'Manual identity verification approved by $reviewer. ${notesController.text.trim()}';
+
     final updated = current.copyWith(
       identityState: IdentityVerificationState.matched,
-      note: notesController.text.trim(),
+      note: manualNote,
     );
     _applyVerificationProgress(updated);
+
+    final attendance =
+        _attendanceStore.findByRegistration(updated.registrationNumber);
+    if (attendance != null) {
+      _attendanceStore.updateRecord(
+        attendance.copyWith(
+          identityState: IdentityVerificationState.matched,
+          verificationNote: manualNote,
+          manualIdentityVerified: true,
+          manualVerifiedBy: reviewer,
+          manualVerificationAuditId: auditId,
+          manualVerifiedAt: now,
+        ),
+      );
+    }
+
     Get.snackbar(
       'Manual Review Approved',
-      'Identity review recorded. Complete any remaining verification checks.',
+      'Identity review recorded with audit ID $auditId. Complete any remaining verification checks.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
