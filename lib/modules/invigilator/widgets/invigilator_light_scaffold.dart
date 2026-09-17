@@ -23,6 +23,7 @@ class InvigilatorLightScaffold extends StatelessWidget {
     Routes.attendanceRegister,
     Routes.hallMonitoring,
     Routes.seatMap,
+    Routes.workstationAllocation,
     Routes.technicalReports,
   };
 
