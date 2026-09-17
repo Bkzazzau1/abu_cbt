@@ -27,11 +27,11 @@ class WorkstationAllocationView
           children: [
             _ExamContextPanel(controller: controller),
             const SizedBox(height: 14),
+            _SummaryPanel(controller: controller),
+            const SizedBox(height: 14),
             _AllocationPolicyPanel(controller: controller),
             const SizedBox(height: 14),
             _ModeActionPanel(controller: controller),
-            const SizedBox(height: 14),
-            _SummaryPanel(controller: controller),
             const SizedBox(height: 14),
             _AssignmentTable(controller: controller),
           ],
@@ -48,69 +48,112 @@ class _ExamContextPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return LightPanel(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final picker = DropdownButtonFormField<String>(
-            initialValue: controller.selectedHall.value,
-            items: controller.hallOptions
-                .map(
-                  (hall) => DropdownMenuItem(value: hall, child: Text(hall)),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value != null) controller.changeHall(value);
-            },
-            decoration: const InputDecoration(
-              labelText: 'Hall',
-              prefixIcon: Icon(Icons.meeting_room_outlined),
-            ),
-          );
-
-          final contextBlock = Column(
+          final details = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 'Candidate ↔ Workstation Assignment',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 5),
               Text(
                 controller.currentExamTitle,
-                style: TextStyle(
-                  color: cs.primary,
+                style: const TextStyle(
+                  color: abuGreen,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 5),
               const Text(
-                'Seats belong to physical workstations. Candidates are assigned only for this examination session.',
-                style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
+                'The seat number identifies the physical workstation only. A candidate is bound to that workstation for this exam session, not permanently allocated to the seat.',
+                style: TextStyle(
+                  color: abuMuted,
+                  fontWeight: FontWeight.w600,
+                  height: 1.45,
+                ),
               ),
             ],
+          );
+
+          final hallPicker = SizedBox(
+            width: 260,
+            child: DropdownButtonFormField<String>(
+              initialValue: controller.selectedHall.value,
+              items: controller.hallOptions
+                  .map(
+                    (hall) => DropdownMenuItem(value: hall, child: Text(hall)),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) controller.changeHall(value);
+              },
+              decoration: const InputDecoration(
+                labelText: 'Hall',
+                prefixIcon: Icon(Icons.meeting_room_outlined),
+              ),
+            ),
           );
 
           if (constraints.maxWidth < 760) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                contextBlock,
-                const SizedBox(height: 14),
-                picker,
-              ],
+              children: [details, const SizedBox(height: 14), hallPicker],
             );
           }
 
           return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: contextBlock),
+              Expanded(child: details),
               const SizedBox(width: 24),
-              SizedBox(width: 250, child: picker),
+              hallPicker,
             ],
           );
         },
       ),
+    );
+  }
+}
+
+class _SummaryPanel extends StatelessWidget {
+  const _SummaryPanel({required this.controller});
+
+  final WorkstationAllocationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        LightStatCard(
+          title: 'Candidates',
+          value: '${controller.candidatesForHall.length}',
+          icon: Icons.groups_outlined,
+          width: 200,
+        ),
+        LightStatCard(
+          title: 'Available',
+          value: '${controller.availableWorkstations.length}',
+          icon: Icons.desktop_windows_outlined,
+          width: 200,
+        ),
+        LightStatCard(
+          title: 'Reserved',
+          value: '${controller.reservedCount}',
+          icon: Icons.bookmark_outline,
+          width: 200,
+        ),
+        LightStatCard(
+          title: 'Locked',
+          value: '${controller.lockedCount}',
+          icon: Icons.lock_outline,
+          width: 200,
+        ),
+      ],
     );
   }
 }
@@ -128,11 +171,11 @@ class _AllocationPolicyPanel extends StatelessWidget {
         children: [
           const Text(
             'Allocation Mode',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 4),
           const Text(
-            'Choose how candidates receive a workstation before the exam begins.',
+            'Choose how candidates receive a workstation for this examination.',
             style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 14),
@@ -168,7 +211,7 @@ class _AllocationPolicyPanel extends StatelessWidget {
                     controller.selectedMode.value.description,
                     style: const TextStyle(
                       color: abuInk,
-                      fontWeight: FontWeight.w650,
+                      fontWeight: FontWeight.w600,
                       height: 1.45,
                     ),
                   ),
@@ -240,11 +283,11 @@ class _FreeSeatingPanel extends StatelessWidget {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  'A candidate may sit at any healthy available workstation. After the first successful login, that candidate is locked to that workstation for the active exam. Moving to another workstation requires an invigilator reassignment.',
+                  'A student may sit at any healthy available workstation. The first successful login locks that candidate and exam to the workstation. A different workstation will reject the same candidate until an invigilator performs a reassignment.',
                   style: TextStyle(
                     color: abuMuted,
-                    height: 1.5,
                     fontWeight: FontWeight.w600,
+                    height: 1.5,
                   ),
                 ),
               ],
@@ -276,16 +319,18 @@ class _ManualAssignmentPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Reserve an available workstation for a candidate. The reservation becomes locked after successful candidate login.',
+            'Reserve a specific available workstation for a candidate. The reservation becomes locked only after successful login.',
             style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
               final candidatePicker = DropdownButtonFormField<String>(
-                initialValue: controller.selectedCandidateRegistration.value.isEmpty
+                initialValue:
+                    controller.selectedCandidateRegistration.value.isEmpty
                     ? null
                     : controller.selectedCandidateRegistration.value,
+                isExpanded: true,
                 items: candidates
                     .map(
                       (candidate) => DropdownMenuItem(
@@ -303,10 +348,12 @@ class _ManualAssignmentPanel extends StatelessWidget {
                   prefixIcon: Icon(Icons.person_outline),
                 ),
               );
-              final seatPicker = DropdownButtonFormField<String>(
+
+              final workstationPicker = DropdownButtonFormField<String>(
                 initialValue: controller.selectedSeatNumber.value.isEmpty
                     ? null
                     : controller.selectedSeatNumber.value,
+                isExpanded: true,
                 items: seats
                     .map(
                       (seat) => DropdownMenuItem(
@@ -325,20 +372,21 @@ class _ManualAssignmentPanel extends StatelessWidget {
                 ),
               );
 
-              if (constraints.maxWidth < 800) {
+              if (constraints.maxWidth < 820) {
                 return Column(
                   children: [
                     candidatePicker,
                     const SizedBox(height: 12),
-                    seatPicker,
+                    workstationPicker,
                   ],
                 );
               }
+
               return Row(
                 children: [
                   Expanded(child: candidatePicker),
                   const SizedBox(width: 12),
-                  Expanded(child: seatPicker),
+                  Expanded(child: workstationPicker),
                 ],
               );
             },
@@ -377,27 +425,37 @@ class _SystemDistributionPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Automatically reserve healthy available workstations for eligible candidates.',
+            'Automatically reserve healthy available workstations. Candidates already locked into an exam are never moved by redistribution.',
             style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 14),
           Wrap(
             spacing: 10,
             runSpacing: 10,
-            children: WorkstationDistributionMode.values.map((mode) {
-              return ChoiceChip(
-                selected: controller.selectedDistributionMode.value == mode,
-                onSelected: (_) => controller.changeDistributionMode(mode),
-                label: Text(mode.label),
-              );
-            }).toList(),
+            children: WorkstationDistributionMode.values
+                .map(
+                  (mode) => ChoiceChip(
+                    selected:
+                        controller.selectedDistributionMode.value == mode,
+                    onSelected: (_) =>
+                        controller.changeDistributionMode(mode),
+                    avatar: Icon(
+                      mode == WorkstationDistributionMode.fixed
+                          ? Icons.format_list_numbered
+                          : Icons.shuffle,
+                      size: 17,
+                    ),
+                    label: Text(mode.label),
+                  ),
+                )
+                .toList(),
           ),
           const SizedBox(height: 12),
           Text(
             controller.selectedDistributionMode.value ==
                     WorkstationDistributionMode.fixed
-                ? 'Fixed assigns candidates in registration-number order to available seats in seat-number order.'
-                : 'Mixed randomizes the available workstation order before creating reservations.',
+                ? 'Fixed / Sequential pairs registration-number order with workstation seat order.'
+                : 'Mixed / Randomized shuffles available workstations before reservations are created.',
             style: const TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
@@ -407,100 +465,13 @@ class _SystemDistributionPanel extends StatelessWidget {
               onPressed: controller.isProcessing.value
                   ? null
                   : controller.distributeWorkstations,
-              icon: const Icon(Icons.shuffle_outlined),
+              icon: const Icon(Icons.auto_awesome_outlined),
               label: Text(
-                controller.selectedDistributionMode.value ==
-                        WorkstationDistributionMode.fixed
-                    ? 'Run Fixed Distribution'
-                    : 'Run Mixed Distribution',
+                controller.isProcessing.value
+                    ? 'Distributing…'
+                    : 'Distribute Workstations',
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryPanel extends StatelessWidget {
-  const _SummaryPanel({required this.controller});
-
-  final WorkstationAllocationController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final hallSeats = controller.availableWorkstations.length +
-        controller.currentAssignments.length;
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        _SummaryCard(
-          label: 'Tracked',
-          value: '$hallSeats',
-          icon: Icons.desktop_windows_outlined,
-        ),
-        _SummaryCard(
-          label: 'Available',
-          value: '${controller.availableWorkstations.length}',
-          icon: Icons.event_seat_outlined,
-        ),
-        _SummaryCard(
-          label: 'Reserved',
-          value: '${controller.reservedCount}',
-          icon: Icons.bookmark_outline,
-        ),
-        _SummaryCard(
-          label: 'Locked',
-          value: '${controller.lockedCount}',
-          icon: Icons.lock_outline,
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 170,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: abuLine),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: abuGreen),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: abuMuted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -516,6 +487,7 @@ class _AssignmentTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assignments = controller.currentAssignments;
+
     return LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,16 +498,16 @@ class _AssignmentTable extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Reserved = pre-login assignment. Locked = candidate has successfully logged in and cannot change workstation without invigilator action.',
+            'Reserved = pre-login assignment. Locked = successful login; workstation changes require invigilator reassignment.',
             style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 14),
           if (assignments.isEmpty)
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 22),
+              padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  'No workstation assignments yet.',
+                  'No workstation bindings yet.',
                   style: TextStyle(color: abuMuted, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -547,7 +519,7 @@ class _AssignmentTable extends StatelessWidget {
                 columns: const [
                   DataColumn(label: Text('Candidate')),
                   DataColumn(label: Text('Registration')),
-                  DataColumn(label: Text('Seat')),
+                  DataColumn(label: Text('Seat / Workstation')),
                   DataColumn(label: Text('Status')),
                   DataColumn(label: Text('Source')),
                 ],
@@ -557,31 +529,26 @@ class _AssignmentTable extends StatelessWidget {
                     cells: [
                       DataCell(Text(assignment.candidateName)),
                       DataCell(Text(assignment.registrationNumber)),
-                      DataCell(Text(assignment.seatNumber)),
                       DataCell(
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: locked
-                                ? const Color(0xFFE8F2EB)
-                                : const Color(0xFFFFF5DB),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            locked ? 'Locked' : 'Reserved',
-                            style: TextStyle(
-                              color: locked
-                                  ? abuGreen
-                                  : const Color(0xFF8A5A00),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11,
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              assignment.seatNumber,
+                              style: const TextStyle(fontWeight: FontWeight.w900),
                             ),
-                          ),
+                            Text(
+                              assignment.workstationId,
+                              style: const TextStyle(
+                                color: abuMuted,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      DataCell(_StatusPill(locked: locked)),
                       DataCell(Text(_sourceLabel(assignment.source))),
                     ],
                   );
@@ -606,5 +573,39 @@ class _AssignmentTable extends StatelessWidget {
       case WorkstationAssignmentSource.invigilatorReassignment:
         return 'Reassigned';
     }
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.locked});
+
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = locked ? abuGreen : const Color(0xFF8A5A00);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(locked ? Icons.lock : Icons.schedule, color: color, size: 14),
+          const SizedBox(width: 5),
+          Text(
+            locked ? 'Locked' : 'Reserved',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
