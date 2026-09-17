@@ -7,6 +7,7 @@ import '../../auth/demo_auth.dart';
 List<Widget> buildInvigilatorTopActions({
   bool showDashboard = true,
   bool showSession = true,
+  bool showReports = true,
   bool showAttendance = true,
   bool showIdentity = true,
   bool showLiveHall = true,
@@ -33,6 +34,16 @@ List<Widget> buildInvigilatorTopActions({
         onPressed: () => _goPrimary(Routes.examSessionDashboard),
         icon: const Icon(Icons.dashboard_outlined),
         label: const Text('Session'),
+      ),
+    );
+  }
+
+  if (showReports) {
+    actions.add(
+      TextButton.icon(
+        onPressed: () => _goPrimary(Routes.generalExamReport),
+        icon: const Icon(Icons.assessment_outlined),
+        label: const Text('Reports'),
       ),
     );
   }
