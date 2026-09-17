@@ -137,53 +137,55 @@ class _PrimaryMetrics extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        LightStatCard(
-          title: 'Registered',
-          value: '${controller.registeredCount}',
-          icon: Icons.groups_outlined,
-          width: 180,
-        ),
-        LightStatCard(
-          title: 'Checked In',
-          value: '${controller.checkedInCount}',
-          icon: Icons.how_to_reg_outlined,
-          width: 180,
-        ),
-        LightStatCard(
-          title: 'Fingerprint',
-          value: '${controller.fingerprintVerifiedCount}',
-          icon: Icons.fingerprint_outlined,
-          width: 180,
-        ),
-        LightStatCard(
-          title: 'Manual Verified',
-          value: '${controller.manualVerifiedCount}',
-          icon: Icons.verified_user_outlined,
-          width: 180,
-        ),
-        LightStatCard(
-          title: 'In Exam',
-          value: '${controller.inExamCount}',
-          icon: Icons.desktop_windows_outlined,
-          width: 180,
-        ),
-        LightStatCard(
-          title: 'Submitted',
-          value: '${controller.submittedCount}',
-          icon: Icons.task_alt_outlined,
-          width: 180,
-        ),
-        LightStatCard(
-          title: 'Absent',
-          value: '${controller.absentCount}',
-          icon: Icons.person_off_outlined,
-          width: 180,
-        ),
-      ],
+    return Obx(
+      () => Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          LightStatCard(
+            title: 'Registered',
+            value: '${controller.registeredCount}',
+            icon: Icons.groups_outlined,
+            width: 180,
+          ),
+          LightStatCard(
+            title: 'Checked In',
+            value: '${controller.checkedInCount}',
+            icon: Icons.how_to_reg_outlined,
+            width: 180,
+          ),
+          LightStatCard(
+            title: 'Fingerprint',
+            value: '${controller.fingerprintVerifiedCount}',
+            icon: Icons.fingerprint_outlined,
+            width: 180,
+          ),
+          LightStatCard(
+            title: 'Manual Verified',
+            value: '${controller.manualVerifiedCount}',
+            icon: Icons.verified_user_outlined,
+            width: 180,
+          ),
+          LightStatCard(
+            title: 'In Exam',
+            value: '${controller.inExamCount}',
+            icon: Icons.desktop_windows_outlined,
+            width: 180,
+          ),
+          LightStatCard(
+            title: 'Submitted',
+            value: '${controller.submittedCount}',
+            icon: Icons.task_alt_outlined,
+            width: 180,
+          ),
+          LightStatCard(
+            title: 'Absent',
+            value: '${controller.absentCount}',
+            icon: Icons.person_off_outlined,
+            width: 180,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -195,72 +197,74 @@ class _OperationalSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LightPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Operational Events',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Every count below comes from an auditable operational record, not from manually typed report totals.',
-            style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 9,
-            runSpacing: 9,
-            children: [
-              _EventChip(
-                icon: Icons.build_circle_outlined,
-                label: 'Technical',
-                value: controller.technicalReports.length,
-              ),
-              _EventChip(
-                icon: Icons.swap_horiz_outlined,
-                label: 'Workstation Transfers',
-                value: controller.workstationTransfers.length,
-              ),
-              _EventChip(
-                icon: Icons.tune_outlined,
-                label: 'Candidate Controls',
-                value: controller.examControlEvents.length,
-              ),
-              _EventChip(
-                icon: Icons.done_all_outlined,
-                label: 'Force Submitted',
-                value: controller.forceSubmittedCount,
-              ),
-              _EventChip(
-                icon: Icons.schedule_outlined,
-                label: 'Late Entry',
-                value: controller.lateEntryCount,
-              ),
-              _EventChip(
-                icon: Icons.report_problem_outlined,
-                label: 'Incidents',
-                value: controller.incidents.length,
-              ),
-              _EventChip(
-                icon: Icons.gpp_bad_outlined,
-                label: 'Malpractice',
-                value: controller.malpracticeReports.length,
-              ),
-              _EventChip(
-                icon: Icons.person_search_outlined,
-                label: 'Identity Reviews',
-                value: controller.identityReviews.length,
-              ),
-              _EventChip(
-                icon: Icons.receipt_long_outlined,
-                label: 'Total Events',
-                value: controller.totalOperationalEvents,
-              ),
-            ],
-          ),
-        ],
+    return Obx(
+      () => LightPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Operational Events',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Every count below comes from an auditable operational record, not from manually typed report totals.',
+              style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 9,
+              runSpacing: 9,
+              children: [
+                _EventChip(
+                  icon: Icons.build_circle_outlined,
+                  label: 'Technical',
+                  value: controller.technicalReports.length,
+                ),
+                _EventChip(
+                  icon: Icons.swap_horiz_outlined,
+                  label: 'Workstation Transfers',
+                  value: controller.workstationTransfers.length,
+                ),
+                _EventChip(
+                  icon: Icons.tune_outlined,
+                  label: 'Candidate Controls',
+                  value: controller.examControlEvents.length,
+                ),
+                _EventChip(
+                  icon: Icons.done_all_outlined,
+                  label: 'Force Submitted',
+                  value: controller.forceSubmittedCount,
+                ),
+                _EventChip(
+                  icon: Icons.schedule_outlined,
+                  label: 'Late Entry',
+                  value: controller.lateEntryCount,
+                ),
+                _EventChip(
+                  icon: Icons.report_problem_outlined,
+                  label: 'Incidents',
+                  value: controller.incidents.length,
+                ),
+                _EventChip(
+                  icon: Icons.gpp_bad_outlined,
+                  label: 'Malpractice',
+                  value: controller.malpracticeReports.length,
+                ),
+                _EventChip(
+                  icon: Icons.person_search_outlined,
+                  label: 'Identity Reviews',
+                  value: controller.identityReviews.length,
+                ),
+                _EventChip(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Total Events',
+                  value: controller.totalOperationalEvents,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -316,58 +320,62 @@ class _HallBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final halls = controller.hallsForExam;
-    return LightPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Hall Breakdown',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'A hall-level view of candidate progress, identity exceptions and operational issues.',
-            style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          if (halls.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 18),
-              child: Text('No halls are associated with this examination.'),
-            )
-          else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                columns: const [
-                  DataColumn(label: Text('Hall')),
-                  DataColumn(label: Text('Registered')),
-                  DataColumn(label: Text('In Exam')),
-                  DataColumn(label: Text('Submitted')),
-                  DataColumn(label: Text('Absent')),
-                  DataColumn(label: Text('Manual ID')),
-                  DataColumn(label: Text('Issues')),
-                ],
-                rows: halls.map((hall) {
-                  final records = controller.candidatesForHall(hall);
-                  return DataRow(
-                    cells: [
-                      DataCell(Text(hall)),
-                      DataCell(Text('${records.length}')),
-                      DataCell(Text('${controller.hallInExamCount(hall)}')),
-                      DataCell(Text('${controller.hallSubmittedCount(hall)}')),
-                      DataCell(Text('${controller.hallAbsentCount(hall)}')),
-                      DataCell(Text('${controller.hallManualVerifiedCount(hall)}')),
-                      DataCell(Text('${controller.hallIssueCount(hall)}')),
-                    ],
-                  );
-                }).toList(),
-              ),
+    return Obx(() {
+      final halls = controller.hallsForExam;
+      return LightPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Hall Breakdown',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
             ),
-        ],
-      ),
-    );
+            const SizedBox(height: 4),
+            const Text(
+              'A hall-level view of candidate progress, identity exceptions and operational issues.',
+              style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            if (halls.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Text('No halls are associated with this examination.'),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Hall')),
+                    DataColumn(label: Text('Registered')),
+                    DataColumn(label: Text('In Exam')),
+                    DataColumn(label: Text('Submitted')),
+                    DataColumn(label: Text('Absent')),
+                    DataColumn(label: Text('Manual ID')),
+                    DataColumn(label: Text('Issues')),
+                  ],
+                  rows: halls.map((hall) {
+                    final records = controller.candidatesForHall(hall);
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(hall)),
+                        DataCell(Text('${records.length}')),
+                        DataCell(Text('${controller.hallInExamCount(hall)}')),
+                        DataCell(Text('${controller.hallSubmittedCount(hall)}')),
+                        DataCell(Text('${controller.hallAbsentCount(hall)}')),
+                        DataCell(
+                          Text('${controller.hallManualVerifiedCount(hall)}'),
+                        ),
+                        DataCell(Text('${controller.hallIssueCount(hall)}')),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -551,7 +559,9 @@ Future<void> _showCandidateDetails(
 
   await showDialog<void>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (dialogContext) => Theme(
+      data: abuDemoTheme(),
+      child: AlertDialog(
       title: Text(record.candidateName),
       content: SizedBox(
         width: 560,
@@ -634,6 +644,7 @@ Future<void> _showCandidateDetails(
           child: const Text('Close'),
         ),
       ],
+      ),
     ),
   );
 }

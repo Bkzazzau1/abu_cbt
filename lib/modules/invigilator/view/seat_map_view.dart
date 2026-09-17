@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/seat_map_models.dart';
+import '../../demo/abu_demo_theme.dart';
 import '../controller/seat_map_controller.dart';
 import '../widgets/invigilator_light_panel.dart';
 import '../widgets/invigilator_light_scaffold.dart';
@@ -253,7 +254,9 @@ class SeatMapView extends GetView<SeatMapController> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
+        return Theme(
+          data: abuDemoTheme(),
+          child: AlertDialog(
           titlePadding: const EdgeInsets.fromLTRB(22, 20, 22, 8),
           contentPadding: const EdgeInsets.fromLTRB(22, 8, 22, 6),
           actionsPadding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
@@ -344,6 +347,7 @@ class SeatMapView extends GetView<SeatMapController> {
                 label: const Text('Candidate Actions'),
               ),
           ],
+          ),
         );
       },
     );

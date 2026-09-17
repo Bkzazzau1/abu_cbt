@@ -125,35 +125,37 @@ class _SummaryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        LightStatCard(
-          title: 'Candidates',
-          value: '${controller.candidatesForHall.length}',
-          icon: Icons.groups_outlined,
-          width: 200,
-        ),
-        LightStatCard(
-          title: 'Available',
-          value: '${controller.availableWorkstations.length}',
-          icon: Icons.desktop_windows_outlined,
-          width: 200,
-        ),
-        LightStatCard(
-          title: 'Reserved',
-          value: '${controller.reservedCount}',
-          icon: Icons.bookmark_outline,
-          width: 200,
-        ),
-        LightStatCard(
-          title: 'Locked',
-          value: '${controller.lockedCount}',
-          icon: Icons.lock_outline,
-          width: 200,
-        ),
-      ],
+    return Obx(
+      () => Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          LightStatCard(
+            title: 'Candidates',
+            value: '${controller.candidatesForHall.length}',
+            icon: Icons.groups_outlined,
+            width: 200,
+          ),
+          LightStatCard(
+            title: 'Available',
+            value: '${controller.availableWorkstations.length}',
+            icon: Icons.desktop_windows_outlined,
+            width: 200,
+          ),
+          LightStatCard(
+            title: 'Reserved',
+            value: '${controller.reservedCount}',
+            icon: Icons.bookmark_outline,
+            width: 200,
+          ),
+          LightStatCard(
+            title: 'Locked',
+            value: '${controller.lockedCount}',
+            icon: Icons.lock_outline,
+            width: 200,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -165,61 +167,63 @@ class _AllocationPolicyPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LightPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Allocation Mode',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Choose how candidates receive a workstation for this examination.',
-            style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: WorkstationAssignmentMode.values.map((mode) {
-              final selected = controller.selectedMode.value == mode;
-              return ChoiceChip(
-                selected: selected,
-                onSelected: (_) => controller.changeMode(mode),
-                avatar: Icon(_modeIcon(mode), size: 18),
-                label: Text(mode.label),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: abuCanvas,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: abuLine),
+    return Obx(
+      () => LightPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Allocation Mode',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.info_outline, color: abuGreen, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    controller.selectedMode.value.description,
-                    style: const TextStyle(
-                      color: abuInk,
-                      fontWeight: FontWeight.w600,
-                      height: 1.45,
+            const SizedBox(height: 4),
+            const Text(
+              'Choose how candidates receive a workstation for this examination.',
+              style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: WorkstationAssignmentMode.values.map((mode) {
+                final selected = controller.selectedMode.value == mode;
+                return ChoiceChip(
+                  selected: selected,
+                  onSelected: (_) => controller.changeMode(mode),
+                  avatar: Icon(_modeIcon(mode), size: 18),
+                  label: Text(mode.label),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: abuCanvas,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: abuLine),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, color: abuGreen, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      controller.selectedMode.value.description,
+                      style: const TextStyle(
+                        color: abuInk,
+                        fontWeight: FontWeight.w600,
+                        height: 1.45,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -243,14 +247,16 @@ class _ModeActionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    switch (controller.selectedMode.value) {
-      case WorkstationAssignmentMode.freeSeating:
-        return const _FreeSeatingPanel();
-      case WorkstationAssignmentMode.manual:
-        return _ManualAssignmentPanel(controller: controller);
-      case WorkstationAssignmentMode.systemDistribution:
-        return _SystemDistributionPanel(controller: controller);
-    }
+    return Obx(() {
+      switch (controller.selectedMode.value) {
+        case WorkstationAssignmentMode.freeSeating:
+          return const _FreeSeatingPanel();
+        case WorkstationAssignmentMode.manual:
+          return _ManualAssignmentPanel(controller: controller);
+        case WorkstationAssignmentMode.systemDistribution:
+          return _SystemDistributionPanel(controller: controller);
+      }
+    });
   }
 }
 
@@ -306,11 +312,12 @@ class _ManualAssignmentPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final candidates = controller.assignableCandidates;
-    final seats = controller.availableWorkstations;
+    return Obx(() {
+      final candidates = controller.assignableCandidates;
+      final seats = controller.availableWorkstations;
 
-    return LightPanel(
-      child: Column(
+      return LightPanel(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -402,9 +409,10 @@ class _ManualAssignmentPanel extends StatelessWidget {
               label: const Text('Reserve Workstation'),
             ),
           ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -415,7 +423,8 @@ class _SystemDistributionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LightPanel(
+    return Obx(
+      () => LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -475,6 +484,7 @@ class _SystemDistributionPanel extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -486,9 +496,10 @@ class _AssignmentTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final assignments = controller.currentAssignments;
+    return Obx(() {
+      final assignments = controller.currentAssignments;
 
-    return LightPanel(
+      return LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -557,7 +568,8 @@ class _AssignmentTable extends StatelessWidget {
             ),
         ],
       ),
-    );
+      );
+    });
   }
 
   String _sourceLabel(WorkstationAssignmentSource source) {

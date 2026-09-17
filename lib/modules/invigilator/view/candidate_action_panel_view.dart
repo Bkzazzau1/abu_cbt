@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/candidate_action_models.dart';
+import '../../demo/abu_demo_theme.dart';
 import '../controller/candidate_action_panel_controller.dart';
 import '../widgets/invigilator_light_panel.dart';
 import '../widgets/invigilator_light_scaffold.dart';
@@ -698,7 +699,9 @@ Future<void> _confirmReassignment(
 
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (dialogContext) => Theme(
+      data: abuDemoTheme(),
+      child: AlertDialog(
       title: const Text('Confirm Seat Reassignment'),
       content: SizedBox(
         width: 500,
@@ -739,6 +742,7 @@ Future<void> _confirmReassignment(
           label: const Text('Confirm Move'),
         ),
       ],
+      ),
     ),
   );
 
@@ -754,7 +758,9 @@ Future<void> _confirmForceSubmit(
 ) async {
   final confirmed = await showDialog<bool>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
+    builder: (dialogContext) => Theme(
+      data: abuDemoTheme(),
+      child: AlertDialog(
       title: const Text('Force Submit Candidate Exam?'),
       content: SizedBox(
         width: 460,
@@ -789,6 +795,7 @@ Future<void> _confirmForceSubmit(
           child: const Text('Force Submit'),
         ),
       ],
+      ),
     ),
   );
 

@@ -18,29 +18,29 @@ class ManualIdentityReviewView extends GetView<ManualIdentityReviewController> {
       title: 'Manual Identity Verification',
       actions: buildInvigilatorTopActions(showIdentity: false),
       maxContentWidth: 1320,
-      body: Obx(() {
-        return ListView(
-          children: [
-            _PolicyBanner(controller: controller),
-            const SizedBox(height: 14),
-            _SummaryRow(controller: controller),
-            const SizedBox(height: 14),
-            _FilterBar(controller: controller),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 980;
-                final list = _RequestList(controller: controller);
-                final detail = Obx(() {
-                  final selected = controller.selectedRequest;
-                  return selected == null
-                      ? const _NoRequestSelected()
-                      : _ReviewPanel(
-                          request: selected,
-                          controller: controller,
-                        );
-                });
+      body: ListView(
+        children: [
+          _PolicyBanner(controller: controller),
+          const SizedBox(height: 14),
+          _SummaryRow(controller: controller),
+          const SizedBox(height: 14),
+          _FilterBar(controller: controller),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 980;
+              final list = _RequestList(controller: controller);
+              final detail = Obx(() {
+                final selected = controller.selectedRequest;
+                return selected == null
+                    ? const _NoRequestSelected()
+                    : _ReviewPanel(
+                        request: selected,
+                        controller: controller,
+                      );
+              });
 
+              return Obx(() {
                 if (!wide) {
                   return Column(
                     children: [
@@ -61,11 +61,11 @@ class ManualIdentityReviewView extends GetView<ManualIdentityReviewController> {
                     Expanded(flex: 4, child: detail),
                   ],
                 );
-              },
-            ),
-          ],
-        );
-      }),
+              });
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -124,35 +124,37 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        LightStatCard(
-          title: 'Pending',
-          value: '${controller.pendingCount}',
-          icon: Icons.pending_actions_outlined,
-          width: 190,
-        ),
-        LightStatCard(
-          title: 'Manual Approved',
-          value: '${controller.approvedCount}',
-          icon: Icons.person_search_outlined,
-          width: 190,
-        ),
-        LightStatCard(
-          title: 'Rejected',
-          value: '${controller.rejectedCount}',
-          icon: Icons.block_outlined,
-          width: 190,
-        ),
-        LightStatCard(
-          title: 'Fingerprint Retry',
-          value: '${controller.fingerprintResolvedCount}',
-          icon: Icons.fingerprint_outlined,
-          width: 190,
-        ),
-      ],
+    return Obx(
+      () => Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          LightStatCard(
+            title: 'Pending',
+            value: '${controller.pendingCount}',
+            icon: Icons.pending_actions_outlined,
+            width: 190,
+          ),
+          LightStatCard(
+            title: 'Manual Approved',
+            value: '${controller.approvedCount}',
+            icon: Icons.person_search_outlined,
+            width: 190,
+          ),
+          LightStatCard(
+            title: 'Rejected',
+            value: '${controller.rejectedCount}',
+            icon: Icons.block_outlined,
+            width: 190,
+          ),
+          LightStatCard(
+            title: 'Fingerprint Retry',
+            value: '${controller.fingerprintResolvedCount}',
+            icon: Icons.fingerprint_outlined,
+            width: 190,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -224,118 +226,127 @@ class _RequestList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final items = controller.filteredRequests;
 
-    return LightPanel(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(18)),
-            ),
-            child: const Row(
-              children: [
-                Expanded(flex: 3, child: _Header('Candidate')),
-                Expanded(flex: 2, child: _Header('Workstation')),
-                Expanded(flex: 2, child: _Header('Reason')),
-                SizedBox(width: 105, child: _Header('Status')),
-                SizedBox(width: 36),
-              ],
-            ),
-          ),
-          if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(28),
-              child: Text(
-                'No identity verification requests match the current filter.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: abuMuted, fontWeight: FontWeight.w700),
+    return Obx(() {
+      final items = controller.filteredRequests;
+
+      return LightPanel(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(18)),
               ),
-            )
-          else
-            ...items.map((request) {
-              final selected =
-                  controller.selectedRequestId.value == request.id;
-              return InkWell(
-                onTap: () => controller.selectRequest(request),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? cs.primary.withValues(alpha: 0.06)
-                        : request.isPending
-                            ? const Color(0xFFF59E0B).withValues(alpha: 0.035)
-                            : null,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: cs.outlineVariant.withValues(alpha: 0.45),
+              child: const Row(
+                children: [
+                  Expanded(flex: 3, child: _Header('Candidate')),
+                  Expanded(flex: 2, child: _Header('Workstation')),
+                  Expanded(flex: 2, child: _Header('Reason')),
+                  SizedBox(width: 105, child: _Header('Status')),
+                  SizedBox(width: 36),
+                ],
+              ),
+            ),
+            if (items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(28),
+                child: Text(
+                  'No identity verification requests match the current filter.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: abuMuted, fontWeight: FontWeight.w700),
+                ),
+              )
+            else
+              ...items.map((request) {
+                final selected =
+                    controller.selectedRequestId.value == request.id;
+                return InkWell(
+                  onTap: () => controller.selectRequest(request),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 11,
+                    ),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? cs.primary.withValues(alpha: 0.06)
+                          : request.isPending
+                              ? const Color(0xFFF59E0B).withValues(alpha: 0.035)
+                              : null,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: cs.outlineVariant.withValues(alpha: 0.45),
+                        ),
                       ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              request.candidateName,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w900),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              request.registrationNumber,
-                              style: const TextStyle(
-                                color: abuMuted,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                request.candidateName,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          request.seatNumber.isEmpty
-                              ? request.workstationId
-                              : '${request.seatNumber} • ${request.workstationId}',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                              const SizedBox(height: 2),
+                              Text(
+                                request.registrationNumber,
+                                style: const TextStyle(
+                                  color: abuMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          request.failureReason.label,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            request.seatNumber.isEmpty
+                                ? request.workstationId
+                                : '${request.seatNumber} • ${request.workstationId}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 105, child: _statusChip(request.status)),
-                      const SizedBox(
-                        width: 36,
-                        child: Icon(Icons.chevron_right, size: 20),
-                      ),
-                    ],
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            request.failureReason.label,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 105,
+                          child: _statusChip(request.status),
+                        ),
+                        const SizedBox(
+                          width: 36,
+                          child: Icon(Icons.chevron_right, size: 20),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            }),
-        ],
-      ),
-    );
+                );
+              }),
+          ],
+        ),
+      );
+    });
   }
 }
 
