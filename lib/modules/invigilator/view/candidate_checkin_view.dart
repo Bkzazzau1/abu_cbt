@@ -5,6 +5,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/attendance_models.dart';
 import '../../../data/models/checkin_models.dart';
+import '../../demo/abu_demo_theme.dart';
 import '../controller/candidate_checkin_controller.dart';
 import '../widgets/invigilator_light_panel.dart';
 import '../widgets/invigilator_light_scaffold.dart';
@@ -18,7 +19,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
     return InvigilatorLightScaffold(
       title: 'Candidate Check-In',
       actions: buildInvigilatorTopActions(showSeatMap: true),
-      maxContentWidth: 1240,
+      maxContentWidth: 1220,
       body: Obx(() {
         final record = controller.record.value;
         if (record == null) {
@@ -37,22 +38,18 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
             const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 900;
                 final verification = _VerificationPanel(
                   record: record,
                   controller: controller,
                 );
-                final assignment = _AssignmentPanel(
-                  record: record,
-                  controller: controller,
-                );
+                final workstation = _WorkstationPanel(record: record);
 
-                if (!wide) {
+                if (constraints.maxWidth < 900) {
                   return Column(
                     children: [
                       verification,
                       const SizedBox(height: 14),
-                      assignment,
+                      workstation,
                     ],
                   );
                 }
@@ -62,7 +59,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
                   children: [
                     Expanded(flex: 3, child: verification),
                     const SizedBox(width: 14),
-                    Expanded(flex: 2, child: assignment),
+                    Expanded(flex: 2, child: workstation),
                   ],
                 );
               },
@@ -83,15 +80,14 @@ class _CandidateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return LightPanel(
       padding: const EdgeInsets.all(18),
       child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 27,
-            backgroundColor: cs.primary.withValues(alpha: 0.10),
-            child: Icon(Icons.person_outline, color: cs.primary, size: 30),
+            backgroundColor: Color(0xFFE8F2EB),
+            child: Icon(Icons.person_outline, color: abuGreen, size: 30),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -112,16 +108,16 @@ class _CandidateHeader extends StatelessWidget {
                   record.registrationNumber.isEmpty
                       ? 'Registration number unavailable'
                       : record.registrationNumber,
-                  style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.66),
+                  style: const TextStyle(
+                    color: abuMuted,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  '${record.hallName} • Seat ${record.seatNumber}',
-                  style: TextStyle(
-                    color: cs.primary,
+                  record.hallName.isEmpty ? 'Hall not assigned' : record.hallName,
+                  style: const TextStyle(
+                    color: abuGreen,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -144,7 +140,7 @@ class _AdmissionProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = _stageIndex(record.status);
     final steps = const [
-      ('Expected', Icons.event_seat_outlined),
+      ('Expected', Icons.schedule_outlined),
       ('Checked In', Icons.how_to_reg_outlined),
       ('Verified', Icons.verified_user_outlined),
       ('Authorized', Icons.lock_open_outlined),
@@ -155,8 +151,7 @@ class _AdmissionProgress extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 760;
-          if (compact) {
+          if (constraints.maxWidth < 760) {
             return Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -216,15 +211,14 @@ class _ProgressStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final emphasized = active || complete;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 9),
       decoration: BoxDecoration(
-        color: active ? cs.primary.withValues(alpha: 0.09) : null,
+        color: active ? abuGreen.withValues(alpha: 0.08) : null,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: emphasized ? cs.primary.withValues(alpha: 0.34) : cs.outlineVariant,
+          color: emphasized ? abuGreen.withValues(alpha: 0.35) : abuLine,
         ),
       ),
       child: Row(
@@ -233,7 +227,7 @@ class _ProgressStep extends StatelessWidget {
           Icon(
             complete ? Icons.check_circle : icon,
             size: 18,
-            color: emphasized ? cs.primary : cs.onSurface.withValues(alpha: 0.48),
+            color: emphasized ? abuGreen : abuMuted,
           ),
           const SizedBox(width: 6),
           Flexible(
@@ -243,9 +237,7 @@ class _ProgressStep extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: active ? FontWeight.w900 : FontWeight.w700,
-                color: emphasized
-                    ? cs.onSurface
-                    : cs.onSurface.withValues(alpha: 0.58),
+                color: emphasized ? abuInk : abuMuted,
               ),
             ),
           ),
@@ -265,10 +257,10 @@ class _AttentionBanner extends StatelessWidget {
     final mismatch = record.identityState == IdentityVerificationState.mismatch;
     final manual = record.identityState == IdentityVerificationState.manualReview;
     final message = mismatch
-        ? 'Biometric identity mismatch. Candidate must not be authorized until the issue is resolved.'
+        ? 'Biometric identity mismatch. Do not authorize until identity is resolved.'
         : manual
-            ? 'Biometric result requires manual invigilator review. Add a review note before approval.'
-            : 'This candidate has a check-in issue requiring invigilator attention.';
+        ? 'Biometric result requires manual invigilator review. Add a review note before approval.'
+        : 'This candidate has a check-in issue requiring invigilator attention.';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -312,20 +304,22 @@ class _VerificationPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final checkedIn = record.status != CandidateCheckInStatus.pending;
+
     return LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Verification Checks',
+            'Admission Verification',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 4),
-          Text(
-            'All three checks must pass before authorization.',
+          const Text(
+            'Identity and exam eligibility must pass before authorization. Workstation allocation is handled separately.',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.64),
+              color: abuMuted,
               fontWeight: FontWeight.w600,
+              height: 1.4,
             ),
           ),
           const SizedBox(height: 14),
@@ -334,34 +328,41 @@ class _VerificationPanel extends StatelessWidget {
             title: 'Identity & Biometric',
             subtitle: _identitySubtitle(record),
             complete: record.identityVerified,
-            attention: record.identityState == IdentityVerificationState.mismatch ||
+            attention:
+                record.identityState == IdentityVerificationState.mismatch ||
                 record.identityState == IdentityVerificationState.manualReview,
             actionLabel: _identityActionLabel(record),
             onPressed: !checkedIn
                 ? null
                 : record.identityState == IdentityVerificationState.manualReview
-                    ? controller.approveManualReview
-                    : record.identityVerified
-                        ? null
-                        : controller.runIdentityVerification,
-          ),
-          const SizedBox(height: 10),
-          _CheckRow(
-            icon: Icons.event_seat_outlined,
-            title: 'Assigned Seat',
-            subtitle: '${record.hallName} • Seat ${record.seatNumber}',
-            complete: record.seatVerified,
-            actionLabel: 'Confirm Seat',
-            onPressed: checkedIn && !record.seatVerified ? controller.confirmSeat : null,
+                ? controller.approveManualReview
+                : record.identityVerified
+                ? null
+                : controller.runIdentityVerification,
           ),
           const SizedBox(height: 10),
           _CheckRow(
             icon: Icons.menu_book_outlined,
-            title: 'Assigned Exam',
-            subtitle: record.examTitle.isEmpty ? 'No exam assigned' : record.examTitle,
+            title: 'Exam Eligibility',
+            subtitle: record.examTitle.isEmpty
+                ? 'No exam assigned'
+                : record.examTitle,
             complete: record.examVerified,
             actionLabel: 'Confirm Exam',
-            onPressed: checkedIn && !record.examVerified ? controller.confirmExam : null,
+            onPressed: checkedIn && !record.examVerified
+                ? controller.confirmExam
+                : null,
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: controller.notesController,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Invigilator verification note',
+              hintText: 'Required for manual identity review; optional otherwise.',
+              prefixIcon: Icon(Icons.notes_outlined),
+            ),
           ),
         ],
       ),
@@ -398,6 +399,95 @@ class _VerificationPanel extends StatelessWidget {
   }
 }
 
+class _WorkstationPanel extends StatelessWidget {
+  const _WorkstationPanel({required this.record});
+
+  final CandidateCheckInRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final assigned = record.hasWorkstationAssignment;
+
+    return LightPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                assigned
+                    ? Icons.desktop_windows_outlined
+                    : Icons.event_seat_outlined,
+                color: assigned ? abuGreen : abuMuted,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Workstation Allocation',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (assigned) ...[
+            _DetailRow(label: 'Hall', value: record.hallName),
+            _DetailRow(label: 'Physical seat', value: record.seatNumber),
+            _DetailRow(label: 'Workstation', value: record.workstationId),
+            const SizedBox(height: 8),
+            const Text(
+              'This is an exam-session workstation binding, not a permanent student seat.',
+              style: TextStyle(
+                color: abuMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ] else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: abuCanvas,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: abuLine),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No workstation assigned yet',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'This is valid. In Free Seating the workstation is chosen by the candidate and locked at successful login. Manual/System modes may reserve one before login.',
+                    style: TextStyle(
+                      color: abuMuted,
+                      fontWeight: FontWeight.w600,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Get.offNamed(Routes.workstationAllocation),
+              icon: const Icon(Icons.assignment_ind_outlined),
+              label: const Text('Open Workstation Allocation'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CheckRow extends StatelessWidget {
   const _CheckRow({
     required this.icon,
@@ -419,30 +509,23 @@ class _CheckRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final iconColor = attention
+    final color = attention
         ? const Color(0xFFF59E0B)
         : complete
-            ? const Color(0xFF16A34A)
-            : cs.primary;
+        ? abuGreen
+        : abuMuted;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outlineVariant),
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: color.withValues(alpha: 0.20)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: iconColor.withValues(alpha: 0.10),
-            ),
-            child: Icon(complete ? Icons.check_circle_outline : icon, color: iconColor),
-          ),
-          const SizedBox(width: 11),
+          Icon(complete ? Icons.check_circle_outline : icon, color: color),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,78 +534,17 @@ class _CheckRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
+                  style: const TextStyle(
+                    color: abuMuted,
                     fontSize: 12,
-                    color: cs.onSurface.withValues(alpha: 0.64),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          if (complete)
-            const KsStatusChip(label: 'Passed', tone: KsStatusChipTone.success)
-          else
-            OutlinedButton(
-              onPressed: onPressed,
-              child: Text(actionLabel),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AssignmentPanel extends StatelessWidget {
-  const _AssignmentPanel({required this.record, required this.controller});
-
-  final CandidateCheckInRecord record;
-  final CandidateCheckInController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return LightPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Candidate Assignment',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 14),
-          _detail('Hall', record.hallName),
-          _detail('Seat', record.seatNumber),
-          _detail('Workstation', record.workstationId),
-          _detail('Exam', record.examTitle),
-          const Divider(height: 26),
-          const Text(
-            'Invigilator Note',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: controller.notesController,
-            minLines: 3,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'Add a note for manual review, mismatch, late arrival or other exception...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          if (record.note.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Recorded: ${record.note}',
-              style: TextStyle(
-                fontSize: 12,
-                height: 1.35,
-                color: cs.onSurface.withValues(alpha: 0.68),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+          if (onPressed != null)
+            TextButton(onPressed: onPressed, child: Text(actionLabel)),
         ],
       ),
     );
@@ -537,211 +559,233 @@ class _NextActionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final next = _nextAction(record, controller);
-    final cs = Theme.of(context).colorScheme;
-
     return LightPanel(
-      padding: const EdgeInsets.all(16),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 760;
-          final description = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Next Action',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 10),
+          _primaryAction(record, controller),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
             children: [
-              const Text(
-                'Next Action',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                next.description,
-                style: TextStyle(
-                  color: cs.onSurface.withValues(alpha: 0.68),
-                  fontWeight: FontWeight.w600,
+              if (record.status != CandidateCheckInStatus.inExam &&
+                  record.status != CandidateCheckInStatus.absent)
+                OutlinedButton.icon(
+                  onPressed: controller.markAbsent,
+                  icon: const Icon(Icons.person_off_outlined),
+                  label: const Text('Mark Absent'),
                 ),
-              ),
-            ],
-          );
-
-          final actions = Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.end,
-            children: [
-              if (next.onPressed != null)
-                FilledButton.icon(
-                  onPressed: next.onPressed,
-                  icon: Icon(next.icon),
-                  label: Text(next.label),
-                ),
-              OutlinedButton.icon(
-                onPressed: () => controller.flagIssue(),
-                icon: const Icon(Icons.flag_outlined),
-                label: const Text('Flag Issue'),
-              ),
               OutlinedButton.icon(
                 onPressed: () => Get.toNamed(
                   Routes.incidentReport,
                   arguments: record,
                 ),
-                icon: const Icon(Icons.description_outlined),
-                label: const Text('Incident'),
+                icon: const Icon(Icons.report_problem_outlined),
+                label: const Text('Report Incident'),
               ),
-              if (record.status == CandidateCheckInStatus.pending ||
-                  record.status == CandidateCheckInStatus.checkedIn)
-                TextButton.icon(
-                  onPressed: controller.markAbsent,
-                  icon: const Icon(Icons.person_off_outlined),
-                  label: const Text('Absent'),
-                ),
             ],
-          );
+          ),
+        ],
+      ),
+    );
+  }
 
-          if (compact) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [description, const SizedBox(height: 12), actions],
+  Widget _primaryAction(
+    CandidateCheckInRecord record,
+    CandidateCheckInController controller,
+  ) {
+    switch (record.status) {
+      case CandidateCheckInStatus.pending:
+        return FilledButton.icon(
+          onPressed: controller.markCheckedIn,
+          icon: const Icon(Icons.how_to_reg_outlined),
+          label: const Text('Record Candidate Check-In'),
+        );
+      case CandidateCheckInStatus.checkedIn:
+        if (!record.identityVerified) {
+          if (record.identityState == IdentityVerificationState.manualReview) {
+            return FilledButton.icon(
+              onPressed: controller.approveManualReview,
+              icon: const Icon(Icons.badge_outlined),
+              label: const Text('Approve Manual Identity Review'),
             );
           }
-          return Row(
-            children: [
-              Expanded(child: description),
-              const SizedBox(width: 16),
-              actions,
-            ],
+          return FilledButton.icon(
+            onPressed: controller.runIdentityVerification,
+            icon: const Icon(Icons.fingerprint),
+            label: const Text('Verify Identity'),
           );
-        },
+        }
+        if (!record.examVerified) {
+          return FilledButton.icon(
+            onPressed: controller.confirmExam,
+            icon: const Icon(Icons.menu_book_outlined),
+            label: const Text('Confirm Exam Eligibility'),
+          );
+        }
+        return const Text('Verification checks complete.');
+      case CandidateCheckInStatus.verified:
+        return FilledButton.icon(
+          onPressed: controller.authorize,
+          icon: const Icon(Icons.verified_user_outlined),
+          label: const Text('Authorize Candidate'),
+        );
+      case CandidateCheckInStatus.authorized:
+        return const _InfoAction(
+          icon: Icons.login_outlined,
+          title: 'Authorized — awaiting workstation login',
+          message:
+              'The active allocation policy will determine the workstation. In Exam is recorded after a successful workstation login lock.',
+        );
+      case CandidateCheckInStatus.inExam:
+        return const _InfoAction(
+          icon: Icons.check_circle_outline,
+          title: 'Candidate is in exam',
+          message: 'A workstation login has been confirmed for this candidate.',
+        );
+      case CandidateCheckInStatus.absent:
+        return const _InfoAction(
+          icon: Icons.person_off_outlined,
+          title: 'Candidate marked absent',
+          message: 'No admission action is currently required.',
+        );
+      case CandidateCheckInStatus.issueFlagged:
+        return const _InfoAction(
+          icon: Icons.warning_amber_outlined,
+          title: 'Resolve verification issue',
+          message: 'Review the identity issue before candidate authorization.',
+        );
+    }
+  }
+}
+
+class _InfoAction extends StatelessWidget {
+  const _InfoAction({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: abuCanvas,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: abuLine),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: abuGreen),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 3),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: abuMuted,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _NextAction {
-  const _NextAction({
-    required this.label,
-    required this.description,
-    required this.icon,
-    this.onPressed,
-  });
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
 
   final String label;
-  final String description;
-  final IconData icon;
-  final VoidCallback? onPressed;
-}
+  final String value;
 
-_NextAction _nextAction(
-  CandidateCheckInRecord record,
-  CandidateCheckInController controller,
-) {
-  switch (record.status) {
-    case CandidateCheckInStatus.pending:
-      return _NextAction(
-        label: 'Mark Checked In',
-        description: 'Record the candidate arrival to begin verification.',
-        icon: Icons.how_to_reg_outlined,
-        onPressed: controller.markCheckedIn,
-      );
-    case CandidateCheckInStatus.checkedIn:
-      if (record.identityState == IdentityVerificationState.manualReview) {
-        return _NextAction(
-          label: 'Approve Manual Review',
-          description: 'Add a review note, approve identity, then complete seat and exam checks.',
-          icon: Icons.manage_accounts_outlined,
-          onPressed: controller.approveManualReview,
-        );
-      }
-      if (record.identityState == IdentityVerificationState.mismatch ||
-          record.status == CandidateCheckInStatus.issueFlagged) {
-        return const _NextAction(
-          label: 'Resolve Identity Issue',
-          description: 'Authorization is blocked until the identity issue is resolved.',
-          icon: Icons.warning_amber_outlined,
-        );
-      }
-      if (!record.identityVerified) {
-        return _NextAction(
-          label: 'Verify Identity',
-          description: 'Run the identity and biometric verification check.',
-          icon: Icons.face_retouching_natural_outlined,
-          onPressed: controller.runIdentityVerification,
-        );
-      }
-      if (!record.seatVerified) {
-        return _NextAction(
-          label: 'Confirm Seat',
-          description: 'Confirm that the candidate is seated at the assigned workstation.',
-          icon: Icons.event_seat_outlined,
-          onPressed: controller.confirmSeat,
-        );
-      }
-      if (!record.examVerified) {
-        return _NextAction(
-          label: 'Confirm Exam',
-          description: 'Confirm the candidate is assigned to the correct examination.',
-          icon: Icons.menu_book_outlined,
-          onPressed: controller.confirmExam,
-        );
-      }
-      return const _NextAction(
-        label: 'Verified',
-        description: 'All verification checks are complete.',
-        icon: Icons.verified_user_outlined,
-      );
-    case CandidateCheckInStatus.verified:
-      return _NextAction(
-        label: 'Authorize Candidate',
-        description: 'All checks passed. Authorize the candidate to enter the examination.',
-        icon: Icons.lock_open_outlined,
-        onPressed: controller.authorize,
-      );
-    case CandidateCheckInStatus.authorized:
-      return _NextAction(
-        label: 'Mark In Exam',
-        description: 'Candidate is authorized. Confirm that the examination has started.',
-        icon: Icons.play_circle_outline,
-        onPressed: controller.markInExam,
-      );
-    case CandidateCheckInStatus.inExam:
-      return const _NextAction(
-        label: 'Admission Complete',
-        description: 'Candidate is verified, authorized and currently in the examination.',
-        icon: Icons.task_alt_outlined,
-      );
-    case CandidateCheckInStatus.absent:
-      return const _NextAction(
-        label: 'Absent',
-        description: 'Candidate is recorded as absent for this examination session.',
-        icon: Icons.person_off_outlined,
-      );
-    case CandidateCheckInStatus.issueFlagged:
-      return const _NextAction(
-        label: 'Resolve Issue',
-        description: 'This check-in is blocked. Review the issue or file an incident report.',
-        icon: Icons.warning_amber_outlined,
-      );
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 105,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: abuMuted,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-Widget _detail(String label, String value) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 9),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 92,
-          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
-        ),
-        Expanded(
-          child: Text(
-            value.isEmpty ? '-' : value,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-    ),
-  );
+KsStatusChip _statusChip(CandidateCheckInStatus status) {
+  switch (status) {
+    case CandidateCheckInStatus.pending:
+      return const KsStatusChip(
+        label: 'Expected',
+        tone: KsStatusChipTone.neutral,
+      );
+    case CandidateCheckInStatus.checkedIn:
+      return const KsStatusChip(
+        label: 'Checked In',
+        tone: KsStatusChipTone.primary,
+      );
+    case CandidateCheckInStatus.verified:
+      return const KsStatusChip(
+        label: 'Verified',
+        tone: KsStatusChipTone.success,
+      );
+    case CandidateCheckInStatus.authorized:
+      return const KsStatusChip(
+        label: 'Authorized',
+        tone: KsStatusChipTone.success,
+      );
+    case CandidateCheckInStatus.inExam:
+      return const KsStatusChip(
+        label: 'In Exam',
+        tone: KsStatusChipTone.success,
+      );
+    case CandidateCheckInStatus.absent:
+      return const KsStatusChip(
+        label: 'Absent',
+        tone: KsStatusChipTone.neutral,
+      );
+    case CandidateCheckInStatus.issueFlagged:
+      return const KsStatusChip(
+        label: 'Attention',
+        tone: KsStatusChipTone.warning,
+      );
+  }
 }
 
 int _stageIndex(CandidateCheckInStatus status) {
@@ -759,24 +803,5 @@ int _stageIndex(CandidateCheckInStatus status) {
       return 4;
     case CandidateCheckInStatus.absent:
       return 0;
-  }
-}
-
-Widget _statusChip(CandidateCheckInStatus status) {
-  switch (status) {
-    case CandidateCheckInStatus.pending:
-      return const KsStatusChip(label: 'Expected', tone: KsStatusChipTone.neutral);
-    case CandidateCheckInStatus.checkedIn:
-      return const KsStatusChip(label: 'Checked In', tone: KsStatusChipTone.info);
-    case CandidateCheckInStatus.verified:
-      return const KsStatusChip(label: 'Verified', tone: KsStatusChipTone.success);
-    case CandidateCheckInStatus.authorized:
-      return const KsStatusChip(label: 'Authorized', tone: KsStatusChipTone.success);
-    case CandidateCheckInStatus.inExam:
-      return const KsStatusChip(label: 'In Exam', tone: KsStatusChipTone.accent);
-    case CandidateCheckInStatus.absent:
-      return const KsStatusChip(label: 'Absent', tone: KsStatusChipTone.danger);
-    case CandidateCheckInStatus.issueFlagged:
-      return const KsStatusChip(label: 'Attention', tone: KsStatusChipTone.warningSoft);
   }
 }
