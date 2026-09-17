@@ -92,7 +92,7 @@ class _ReportHeader extends StatelessWidget {
               ),
               SizedBox(height: 5),
               Text(
-                'Live report derived from attendance, identity verification, workstation assignments, technical operations, incidents and malpractice records.',
+                'Live report derived from attendance, identity verification, workstation assignments, technical operations, candidate controls, incidents and malpractice records.',
                 style: TextStyle(
                   color: abuMuted,
                   fontWeight: FontWeight.w600,
@@ -222,6 +222,21 @@ class _OperationalSummary extends StatelessWidget {
                 icon: Icons.swap_horiz_outlined,
                 label: 'Workstation Transfers',
                 value: controller.workstationTransfers.length,
+              ),
+              _EventChip(
+                icon: Icons.tune_outlined,
+                label: 'Candidate Controls',
+                value: controller.examControlEvents.length,
+              ),
+              _EventChip(
+                icon: Icons.done_all_outlined,
+                label: 'Force Submitted',
+                value: controller.forceSubmittedCount,
+              ),
+              _EventChip(
+                icon: Icons.schedule_outlined,
+                label: 'Late Entry',
+                value: controller.lateEntryCount,
               ),
               _EventChip(
                 icon: Icons.report_problem_outlined,
@@ -528,6 +543,7 @@ Future<void> _showCandidateDetails(
   AttendanceRecord record,
 ) async {
   final identityReviews = controller.identityReviewsFor(record.registrationNumber);
+  final controlEvents = controller.controlEventsFor(record.registrationNumber);
   final incidentCount = controller.incidentCountFor(record.registrationNumber);
   final malpracticeCount = controller.malpracticeCountFor(record.registrationNumber);
   final technicalCount = controller.technicalCountFor(record.registrationNumber);
@@ -568,13 +584,36 @@ Future<void> _showCandidateDetails(
                 style: TextStyle(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 10),
+              _Detail('Candidate controls', '${controlEvents.length}'),
               _Detail('Incidents', '$incidentCount'),
               _Detail('Malpractice reports', '$malpracticeCount'),
               _Detail('Technical reports', '$technicalCount'),
               _Detail('Workstation transfers', '$transferCount'),
               _Detail('Identity review requests', '${identityReviews.length}'),
+              if (controlEvents.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Candidate control history',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                ...controlEvents.map(
+                  (event) => Padding(
+                    padding: const EdgeInsets.only(bottom: 7),
+                    child: Text(
+                      '${event.type.label} • ${event.actedBy} • ${event.createdAt.toIso8601String()}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
               if (identityReviews.isNotEmpty) ...[
                 const SizedBox(height: 8),
+                const Text(
+                  'Identity review history',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
                 ...identityReviews.map(
                   (request) => Padding(
                     padding: const EdgeInsets.only(bottom: 7),
