@@ -5,6 +5,7 @@ enum CandidateCheckInStatus {
   checkedIn,
   verified,
   authorized,
+  inExam,
   absent,
   issueFlagged,
 }
