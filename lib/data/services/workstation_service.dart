@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/workstation_models.dart';
-import 'attendance_mock_service.dart';
 
 class WorkstationService {
   static const _key = 'center_exam.workstation_registration';
@@ -83,6 +82,9 @@ class WorkstationService {
     return updated;
   }
 
+  /// Updates only the physical workstation registration. Candidate login must
+  /// never change hall/seat identity; the assignment engine binds a candidate
+  /// to this already-registered workstation for an examination session.
   static Future<WorkstationRegistration> updateAssignment({
     required String centerName,
     required String hallName,
@@ -97,44 +99,6 @@ class WorkstationService {
     );
     await save(updated);
     return updated;
-  }
-
-  static Future<WorkstationRegistration> ensureAssignmentFromAttendance({
-    required String candidateRegistrationNumber,
-    String fallbackCenterName = 'ABU',
-  }) async {
-    final current = await loadOrCreate();
-    final needsHall = current.hallName.trim().isEmpty;
-    final needsSeat = current.seatNumber.trim().isEmpty;
-
-    if (!needsHall && !needsSeat) {
-      return current;
-    }
-
-    final normalizedRegNo = candidateRegistrationNumber.trim().toUpperCase();
-    if (normalizedRegNo.isEmpty) {
-      return current;
-    }
-
-    final attendance = await AttendanceMockService.loadAttendance();
-    for (final item in attendance) {
-      if (item.registrationNumber.trim().toUpperCase() != normalizedRegNo) {
-        continue;
-      }
-
-      final updated = current.copyWith(
-        centerName: current.centerName.trim().isEmpty
-            ? fallbackCenterName.trim()
-            : current.centerName,
-        hallName: needsHall ? item.hallName : current.hallName,
-        seatNumber: needsSeat ? item.seatNumber : current.seatNumber,
-        lastSeenAtIso: DateTime.now().toIso8601String(),
-      );
-      await save(updated);
-      return updated;
-    }
-
-    return current;
   }
 
   // FRONTEND MOCK:
