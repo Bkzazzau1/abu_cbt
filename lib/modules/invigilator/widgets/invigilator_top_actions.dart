@@ -5,6 +5,7 @@ import '../../../app/routes/app_routes.dart';
 import '../../auth/demo_auth.dart';
 
 List<Widget> buildInvigilatorTopActions({
+  bool showDashboard = true,
   bool showSession = true,
   bool showAttendance = true,
   bool showLiveHall = true,
@@ -14,10 +15,20 @@ List<Widget> buildInvigilatorTopActions({
 }) {
   final actions = <Widget>[];
 
+  if (showDashboard) {
+    actions.add(
+      TextButton.icon(
+        onPressed: () => _goPrimary(Routes.invigilatorDashboard),
+        icon: const Icon(Icons.home_outlined),
+        label: const Text('Overview'),
+      ),
+    );
+  }
+
   if (showSession) {
     actions.add(
       TextButton.icon(
-        onPressed: () => Get.toNamed(Routes.examSessionDashboard),
+        onPressed: () => _goPrimary(Routes.examSessionDashboard),
         icon: const Icon(Icons.dashboard_outlined),
         label: const Text('Session'),
       ),
@@ -27,7 +38,7 @@ List<Widget> buildInvigilatorTopActions({
   if (showAttendance) {
     actions.add(
       TextButton.icon(
-        onPressed: () => Get.toNamed(Routes.attendanceRegister),
+        onPressed: () => _goPrimary(Routes.attendanceRegister),
         icon: const Icon(Icons.fact_check_outlined),
         label: const Text('Attendance'),
       ),
@@ -37,7 +48,7 @@ List<Widget> buildInvigilatorTopActions({
   if (showLiveHall) {
     actions.add(
       TextButton.icon(
-        onPressed: () => Get.toNamed(Routes.hallMonitoring),
+        onPressed: () => _goPrimary(Routes.hallMonitoring),
         icon: const Icon(Icons.monitor_outlined),
         label: const Text('Live Hall'),
       ),
@@ -47,7 +58,7 @@ List<Widget> buildInvigilatorTopActions({
   if (showSeatMap) {
     actions.add(
       TextButton.icon(
-        onPressed: () => Get.toNamed(Routes.seatMap),
+        onPressed: () => _goPrimary(Routes.seatMap),
         icon: const Icon(Icons.grid_view_outlined),
         label: const Text('Seat Map'),
       ),
@@ -57,7 +68,7 @@ List<Widget> buildInvigilatorTopActions({
   if (showTechnical) {
     actions.add(
       TextButton.icon(
-        onPressed: () => Get.toNamed(Routes.technicalReports),
+        onPressed: () => _goPrimary(Routes.technicalReports),
         icon: const Icon(Icons.build_circle_outlined),
         label: const Text('Technical'),
       ),
@@ -76,4 +87,9 @@ List<Widget> buildInvigilatorTopActions({
 
   actions.add(const SizedBox(width: 8));
   return actions;
+}
+
+void _goPrimary(String route) {
+  if (Get.currentRoute == route) return;
+  Get.offNamed(route);
 }
