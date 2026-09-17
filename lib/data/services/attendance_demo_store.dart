@@ -93,18 +93,13 @@ class AttendanceDemoStore extends GetxService {
       );
       if (assignment == null) continue;
 
-      var nextState = current.state;
-      if (assignment.isLocked &&
-          current.state != AttendanceState.submitted &&
-          current.state != AttendanceState.absent &&
-          current.state != AttendanceState.issueFlagged) {
-        nextState = AttendanceState.inExam;
-      }
-
+      // A workstation reservation/lock is not the same thing as exam
+      // admission. Login may lock the workstation before fingerprint/manual
+      // identity clearance, so only synchronize the physical binding here.
+      // Attendance becomes In Exam when CenterExamRun actually starts.
       if (current.hallName == assignment.hallName &&
           current.seatNumber == assignment.seatNumber &&
-          current.workstationId == assignment.workstationId &&
-          current.state == nextState) {
+          current.workstationId == assignment.workstationId) {
         continue;
       }
 
@@ -112,7 +107,6 @@ class AttendanceDemoStore extends GetxService {
         hallName: assignment.hallName,
         seatNumber: assignment.seatNumber,
         workstationId: assignment.workstationId,
-        state: nextState,
       );
       changed = true;
     }
