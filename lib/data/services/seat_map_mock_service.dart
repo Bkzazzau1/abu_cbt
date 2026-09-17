@@ -95,7 +95,7 @@ class SeatMapMockService {
     'Musa Abdullahi',
     'Jamila Ibrahim',
     'Abdullahi Umar',
-    'Asma'u Bello',
+    "Asma'u Bello",
     'Mustapha Garba',
     'Rahma Yusuf',
     'Nasir Ahmad',
