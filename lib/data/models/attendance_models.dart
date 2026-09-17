@@ -12,6 +12,7 @@ enum AttendanceState {
 enum IdentityVerificationState {
   pending,
   matched,
+  manualVerified,
   mismatch,
   manualReview,
 }
@@ -42,6 +43,10 @@ class AttendanceRecord {
   final double biometricConfidence;
   final String arrivalTimeLabel;
   final String verificationNote;
+
+  bool get identityVerified =>
+      identityState == IdentityVerificationState.matched ||
+      identityState == IdentityVerificationState.manualVerified;
 
   bool get needsAttention =>
       state == AttendanceState.issueFlagged ||
