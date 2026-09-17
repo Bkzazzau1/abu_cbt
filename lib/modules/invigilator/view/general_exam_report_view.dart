@@ -117,7 +117,7 @@ class _ReportHeader extends StatelessWidget {
 
           return Row(
             children: [
-              const Expanded(flex: 4, child: title),
+              Expanded(flex: 4, child: title),
               const SizedBox(width: 20),
               Expanded(flex: 3, child: examPicker),
               const SizedBox(width: 10),
@@ -427,7 +427,7 @@ class _CandidateAudit extends StatelessWidget {
                 }
                 return Row(
                   children: [
-                    const Expanded(child: title),
+                    Expanded(child: title),
                     const SizedBox(width: 16),
                     SizedBox(width: 330, child: search),
                   ],

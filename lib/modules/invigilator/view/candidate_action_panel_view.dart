@@ -212,7 +212,7 @@ class _SeatReassignmentCard extends StatelessWidget {
                 final selected = controller.selectedDestinationSeat.value;
 
                 return DropdownButtonFormField<String>(
-                  value: selected.isEmpty ? null : selected,
+                  initialValue: selected.isEmpty ? null : selected,
                   isExpanded: true,
                   items: seats
                       .map(
@@ -244,7 +244,7 @@ class _SeatReassignmentCard extends StatelessWidget {
 
               final reason = Obx(() {
                 return DropdownButtonFormField<SeatReassignmentReason>(
-                  value: controller.selectedReassignmentReason.value,
+                  initialValue: controller.selectedReassignmentReason.value,
                   isExpanded: true,
                   items: SeatReassignmentReason.values
                       .map(

@@ -43,7 +43,7 @@ class AttendanceMockService {
       final name = _candidateNameFor(registrationNumber, fallbackName);
       final arrival = _arrivalForState(state, seat);
       final manualVerified = hallName == 'Hall A' && seat == 26;
-      final confidence = manualVerified ? 0 : _confidenceFor(identity, seat);
+      final confidence = manualVerified ? 0.0 : _confidenceFor(identity, seat);
       final hasWorkstationBinding = _hasWorkstationBinding(state);
       final manualVerifiedAt = manualVerified
           ? DateTime.now().subtract(const Duration(minutes: 23))

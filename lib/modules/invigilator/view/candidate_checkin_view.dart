@@ -758,7 +758,7 @@ KsStatusChip _statusChip(CandidateCheckInStatus status) {
     case CandidateCheckInStatus.checkedIn:
       return const KsStatusChip(
         label: 'Checked In',
-        tone: KsStatusChipTone.primary,
+        tone: KsStatusChipTone.info,
       );
     case CandidateCheckInStatus.verified:
       return const KsStatusChip(
