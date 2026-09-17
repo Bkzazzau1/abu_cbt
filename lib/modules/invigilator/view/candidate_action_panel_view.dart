@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/candidate_action_models.dart';
 import '../controller/candidate_action_panel_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
@@ -15,17 +15,11 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Candidate Action Panel'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(showSeatMap: true),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1280,
-        child: Obx(() {
+    return InvigilatorLightScaffold(
+      title: 'Candidate Action Panel',
+      actions: buildInvigilatorTopActions(showSeatMap: true),
+      maxContentWidth: 1280,
+      body: Obx(() {
           final record = controller.contextRecord.value;
           if (record == null) {
             return const Center(
@@ -35,7 +29,7 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
 
           return ListView(
             children: [
-            GlassCard(
+            LightPanel(
               child: Row(
                 children: [
                   CircleAvatar(
@@ -79,7 +73,7 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,7 +90,7 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -121,7 +115,7 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -151,7 +145,7 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -206,7 +200,7 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Text(
                 'Important: Candidate control actions should only be used by '
                 'authorized invigilators and should always be accompanied by a '
@@ -221,7 +215,6 @@ class CandidateActionPanelView extends GetView<CandidateActionPanelController> {
             ],
           );
         }),
-      ),
     );
   }
 

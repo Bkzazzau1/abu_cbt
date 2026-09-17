@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../auth/demo_auth.dart';
 
 List<Widget> buildInvigilatorTopActions({
   bool showSession = true,
@@ -55,7 +56,7 @@ List<Widget> buildInvigilatorTopActions({
   if (showLogout) {
     actions.add(
       TextButton.icon(
-        onPressed: () => Get.offAllNamed(Routes.invigilatorLogin),
+        onPressed: () => DemoAuth.instance.signOut(),
         icon: const Icon(Icons.logout_outlined),
         label: const Text('Logout'),
       ),

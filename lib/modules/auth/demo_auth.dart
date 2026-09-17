@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app/routes/app_routes.dart';
 import '../../data/models/center_exam_models.dart';
 import '../../data/services/center_exam_service.dart';
+import '../../data/services/invigilator_session.dart';
 import '../exam/controller/center_exam_run_controller.dart';
 import '../portal/controller/center_exam_portal_controller.dart';
 
@@ -79,12 +80,24 @@ class DemoAuth {
       Get.offAllNamed(Routes.centerPortal);
       return;
     }
+    if (account?.role == 'Invigilator') {
+      // The real, backend-wired workstation console (evidence review,
+      // malpractice reports, terminate exam) rather than the cosmetic
+      // Overview/Hall monitoring/Attendance/Candidates/Incidents tabs in
+      // the shared admin+invigilator demo workspace below — Administrator
+      // still goes there since its broader tour (exam authoring, question
+      // bank, results, settings) has no equivalent here.
+      InvigilatorSession.currentName = account!.name;
+      Get.offAllNamed(Routes.invigilatorDashboard);
+      return;
+    }
     Get.offAllNamed(Routes.demo);
   }
 
   Future<void> signOut() async {
     account = null;
     student = null;
+    InvigilatorSession.currentName = '';
     if (Get.isRegistered<CenterExamRunController>()) {
       Get.delete<CenterExamRunController>(force: true);
     }

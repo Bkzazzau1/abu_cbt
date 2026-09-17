@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
-import '../../../core/widgets/ks_stat_card.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../controller/hall_monitoring_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class HallMonitoringView extends GetView<HallMonitoringController> {
@@ -17,17 +16,10 @@ class HallMonitoringView extends GetView<HallMonitoringController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hall Live Monitoring'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(showLiveHall: false, showSeatMap: true),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1480,
-        child: Obx(() {
+    return InvigilatorLightScaffold(
+      title: 'Hall Live Monitoring',
+      actions: buildInvigilatorTopActions(showLiveHall: false, showSeatMap: true),
+      body: Obx(() {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -36,7 +28,7 @@ class HallMonitoringView extends GetView<HallMonitoringController> {
             children: [
             _SummaryRow(controller: controller),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 children: [
                   TextField(
@@ -78,7 +70,7 @@ class HallMonitoringView extends GetView<HallMonitoringController> {
               final items = controller.filteredRecords;
 
               if (items.isEmpty) {
-                return GlassCard(
+                return LightPanel(
                   child: Text(
                     'No live records match your filter.',
                     style: TextStyle(
@@ -106,7 +98,6 @@ class HallMonitoringView extends GetView<HallMonitoringController> {
             ],
           );
         }),
-      ),
     );
   }
 }
@@ -122,27 +113,27 @@ class _SummaryRow extends StatelessWidget {
       spacing: 12,
       runSpacing: 12,
       children: [
-        KsStatCard(
+        LightStatCard(
           title: 'Ready',
           value: '${controller.readyCount}',
           icon: Icons.check_circle_outline,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'In Exam',
           value: '${controller.inExamCount}',
           icon: Icons.task_alt_outlined,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Submitted',
           value: '${controller.submittedCount}',
           icon: Icons.done_all_outlined,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Issues',
           value: '${controller.issueCount}',
           icon: Icons.report_problem_outlined,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Malpractice',
           value: '${controller.malpracticeCount}',
           icon: Icons.gpp_bad_outlined,
@@ -160,7 +151,7 @@ class _LiveMonitorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

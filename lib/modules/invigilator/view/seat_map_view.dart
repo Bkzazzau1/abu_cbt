@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/seat_map_models.dart';
 import '../controller/seat_map_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class SeatMapView extends GetView<SeatMapController> {
@@ -16,24 +16,17 @@ class SeatMapView extends GetView<SeatMapController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hall Seat Map'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(showSeatMap: false),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1480,
-        child: Obx(() {
+    return InvigilatorLightScaffold(
+      title: 'Hall Seat Map',
+      actions: buildInvigilatorTopActions(showSeatMap: false),
+      body: Obx(() {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
 
           return ListView(
             children: [
-            GlassCard(
+            LightPanel(
               child: Obx(
                 () => DropdownButtonFormField<String>(
                   initialValue: controller.selectedHall.value,
@@ -55,7 +48,7 @@ class SeatMapView extends GetView<SeatMapController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -105,7 +98,6 @@ class SeatMapView extends GetView<SeatMapController> {
             ],
           );
         }),
-      ),
     );
   }
 

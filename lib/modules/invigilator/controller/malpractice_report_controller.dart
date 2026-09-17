@@ -4,12 +4,16 @@ import 'package:get/get.dart';
 import '../../../data/models/checkin_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
+import '../../../data/models/evidence_models.dart';
 import '../../../data/models/malpractice_models.dart';
+import '../../../data/services/invigilator_session.dart';
+import '../../../data/services/workstation_presence_ws_service.dart';
 
 class MalpracticeReportController extends GetxController {
   final candidateName = ''.obs;
   final registrationNumber = ''.obs;
   final workstationId = ''.obs;
+  final centerName = ''.obs;
   final hallName = ''.obs;
   final seatNumber = ''.obs;
   final examTitle = ''.obs;
@@ -31,6 +35,7 @@ class MalpracticeReportController extends GetxController {
       candidateName.value = arg.candidateName;
       registrationNumber.value = arg.registrationNumber;
       workstationId.value = arg.workstationId;
+      centerName.value = arg.centerName;
       hallName.value = arg.hallName;
       seatNumber.value = arg.seatNumber;
       examTitle.value = arg.examTitle;
@@ -55,6 +60,56 @@ class MalpracticeReportController extends GetxController {
       seatNumber.value = arg.seatNumber;
       examTitle.value = arg.examTitle;
       return;
+    }
+
+    if (arg is EvidenceEvent) {
+      candidateName.value = arg.candidateName;
+      registrationNumber.value = arg.registrationNumber;
+      workstationId.value = arg.workstationId;
+      centerName.value = arg.centerName;
+      hallName.value = arg.hallName;
+      seatNumber.value = arg.seatNumber;
+      examTitle.value = arg.examTitle;
+      selectedType.value = _defaultTypeFor(arg.evidenceType);
+      selectedSeverity.value = MalpracticeSeverity.major;
+      final confidenceText = arg.confidence != null
+          ? ' (${(arg.confidence! * 100).round()}% model confidence)'
+          : '';
+      descriptionController.text =
+          'Local detector flagged: ${arg.details.isEmpty ? _evidenceTypeLabel(arg.evidenceType) : arg.details}'
+          '$confidenceText at ${arg.detectedAtIso}. Officer review required '
+          '— confirm and record what was actually observed.';
+      return;
+    }
+  }
+
+  MalpracticeType _defaultTypeFor(String evidenceType) {
+    switch (evidenceType) {
+      case EvidenceType.phone:
+        return MalpracticeType.phoneUse;
+      case EvidenceType.identity:
+        return MalpracticeType.impersonation;
+      case EvidenceType.talking:
+        return MalpracticeType.talking;
+      case EvidenceType.usb:
+        return MalpracticeType.unauthorizedMaterial;
+      default:
+        return MalpracticeType.suspiciousBehavior;
+    }
+  }
+
+  String _evidenceTypeLabel(String evidenceType) {
+    switch (evidenceType) {
+      case EvidenceType.phone:
+        return 'possible phone';
+      case EvidenceType.identity:
+        return 'identity mismatch';
+      case EvidenceType.talking:
+        return 'elevated talking';
+      case EvidenceType.usb:
+        return 'unauthorized USB device';
+      default:
+        return 'detection event';
     }
   }
 
@@ -94,6 +149,7 @@ class MalpracticeReportController extends GetxController {
     try {
       final report = MalpracticeReportModel(
         workstationId: workstationId.value,
+        centerName: centerName.value.isEmpty ? 'ABU' : centerName.value,
         hallName: hallName.value,
         seatNumber: seatNumber.value,
         candidateName: candidateName.value,
@@ -103,10 +159,14 @@ class MalpracticeReportController extends GetxController {
         severity: selectedSeverity.value,
         description: description,
         actionTaken: actionTaken,
+        reportedBy: InvigilatorSession.currentName,
         reportedAtIso: DateTime.now().toIso8601String(),
       );
 
-      await Future.delayed(const Duration(milliseconds: 700));
+      final wsService = Get.isRegistered<WorkstationPresenceWsService>()
+          ? Get.find<WorkstationPresenceWsService>()
+          : Get.put(WorkstationPresenceWsService());
+      wsService.sendMalpracticeReport(report.toJson());
 
       Get.snackbar(
         'Malpractice Report Submitted',

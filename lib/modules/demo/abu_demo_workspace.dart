@@ -32,17 +32,12 @@ class _AbuDemoWorkspaceState extends State<AbuDemoWorkspace> {
     'Incidents': Icons.flag_outlined,
     'Settings': Icons.tune,
   };
+  // Invigilator accounts never reach this workspace — DemoAuth.openWorkspace
+  // sends them straight to the real, backend-wired Routes.invigilatorDashboard
+  // instead, so there's exactly one invigilator screen, not two. This getter
+  // only ever sees Student or Administrator.
   List<String> get pages => store.role == 'Student'
       ? ['My examinations', 'My results', 'Help & guidance']
-      : store.role == 'Invigilator'
-      ? [
-          'Overview',
-          'Hall monitoring',
-          'Attendance',
-          'Candidates',
-          'Incidents',
-          'Help & guidance',
-        ]
       : [...navigation.keys, 'Help & guidance'];
 
   @override

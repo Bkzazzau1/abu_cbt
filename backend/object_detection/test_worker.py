@@ -49,7 +49,7 @@ class DetectionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             args = argparse.Namespace(model=str(Path(directory) / 'missing.pt'))
             with self.assertRaisesRegex(RuntimeError, 'Local model missing'):
-                run(args, lambda _: None, threading.Event())
+                run(args, lambda _: None, threading.Event(), lambda: None)
 
     def test_identity_schedule_picks_offsets_within_middle_of_exam(self):
         schedule = IdentitySchedule(3600, count=3, rng=random.Random(1))

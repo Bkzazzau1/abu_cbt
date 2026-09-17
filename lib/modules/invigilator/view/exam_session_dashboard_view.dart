@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/glass_card.dart' show GlassCardTone;
 import '../../../core/widgets/ks_page_shell.dart';
-import '../../../core/widgets/ks_stat_card.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/exam_session_models.dart';
 import '../controller/exam_session_dashboard_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class ExamSessionDashboardView extends GetView<ExamSessionDashboardController> {
@@ -17,20 +18,13 @@ class ExamSessionDashboardView extends GetView<ExamSessionDashboardController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Exam Session Dashboard'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(
+    return InvigilatorLightScaffold(
+      title: 'Exam Session Dashboard',
+      actions: buildInvigilatorTopActions(
           showSession: false,
           showSeatMap: true,
         ),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1480,
-        child: Obx(() {
+      body: Obx(() {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -50,7 +44,7 @@ class ExamSessionDashboardView extends GetView<ExamSessionDashboardController> {
                 title: 'Session Controls',
                 subtitle:
                     'Manage the examination lifecycle for the active hall.',
-                child: GlassCard(
+                child: LightPanel(
                   tone: GlassCardTone.primary,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +92,7 @@ class ExamSessionDashboardView extends GetView<ExamSessionDashboardController> {
               KsPageSection(
                 title: 'Quick Navigation',
                 subtitle: 'Move quickly between the major invigilation tools.',
-                child: GlassCard(
+                child: LightPanel(
                   child: Wrap(
                     spacing: 10,
                     runSpacing: 10,
@@ -129,7 +123,7 @@ class ExamSessionDashboardView extends GetView<ExamSessionDashboardController> {
                 ),
               ),
               const SizedBox(height: 18),
-              GlassCard(
+              LightPanel(
                 tone: GlassCardTone.warning,
                 child: Text(
                   'This dashboard provides a live operational overview of attendance, exam progress, offline conditions, incident handling, and malpractice visibility within the active hall.',
@@ -143,7 +137,6 @@ class ExamSessionDashboardView extends GetView<ExamSessionDashboardController> {
             ],
           );
         }),
-      ),
     );
   }
 }
@@ -157,7 +150,7 @@ class _HeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GlassCard(
+    return LightPanel(
       tone: GlassCardTone.primary,
       showGlow: true,
       padding: const EdgeInsets.all(22),
@@ -293,49 +286,49 @@ class _MetricsGrid extends StatelessWidget {
       spacing: 14,
       runSpacing: 14,
       children: [
-        KsStatCard(
+        LightStatCard(
           title: 'Total Candidates',
           value: '${session.totalCandidates}',
           icon: Icons.groups_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Checked In',
           value: '${session.checkedInCount}',
           icon: Icons.badge_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Authorized',
           value: '${session.authorizedCount}',
           icon: Icons.verified_user_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'In Exam',
           value: '${session.inExamCount}',
           icon: Icons.task_alt_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Submitted',
           value: '${session.submittedCount}',
           icon: Icons.done_all_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Offline',
           value: '${session.offlineCount}',
           icon: Icons.cloud_off_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Incidents',
           value: '${session.incidentCount}',
           icon: Icons.report_problem_outlined,
           width: 220,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Malpractice',
           value: '${session.malpracticeCount}',
           icon: Icons.gpp_bad_outlined,
@@ -361,7 +354,7 @@ class _MiniMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GlassCard(
+    return LightPanel(
       padding: const EdgeInsets.all(14),
       child: SizedBox(
         width: 155,

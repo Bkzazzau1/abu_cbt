@@ -34,6 +34,7 @@ class InvigilatorWorkstationRecord {
     this.checkInMismatchReason = '',
     this.similarityFlagged = false,
     this.similarityReason = '',
+    this.isPaused = false,
   });
 
   final String workstationId;
@@ -61,6 +62,12 @@ class InvigilatorWorkstationRecord {
   final bool similarityFlagged;
   final String similarityReason;
 
+  /// Local-only pause marker set from the invigilator dashboard. Unlike
+  /// [WorkstationStatus]/[usageState] this is never sent to or read from the
+  /// backend — it exists purely so an invigilator can flag a candidate as
+  /// paused for their own tracking on this dashboard.
+  final bool isPaused;
+
   InvigilatorWorkstationRecord copyWith({
     String? workstationId,
     String? centerName,
@@ -86,6 +93,7 @@ class InvigilatorWorkstationRecord {
     String? checkInMismatchReason,
     bool? similarityFlagged,
     String? similarityReason,
+    bool? isPaused,
   }) {
     return InvigilatorWorkstationRecord(
       workstationId: workstationId ?? this.workstationId,
@@ -113,6 +121,7 @@ class InvigilatorWorkstationRecord {
           checkInMismatchReason ?? this.checkInMismatchReason,
       similarityFlagged: similarityFlagged ?? this.similarityFlagged,
       similarityReason: similarityReason ?? this.similarityReason,
+      isPaused: isPaused ?? this.isPaused,
     );
   }
 }

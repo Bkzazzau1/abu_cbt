@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
+import '../../../core/widgets/glass_card.dart' show GlassCardTone;
 import '../../../core/widgets/ks_page_shell.dart';
-import '../../../core/widgets/ks_stat_card.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/invigilator_models.dart';
+import '../../../data/models/malpractice_models.dart';
+import '../../../data/models/evidence_models.dart';
 import '../../../data/models/workstation_models.dart';
+import '../../demo/abu_demo_theme.dart';
 import '../controller/invigilator_dashboard_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
@@ -16,12 +19,54 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
 
   @override
   Widget build(BuildContext context) {
+    // Self-themed, like the calculator dialog and scientific calculator
+    // before it — this screen is reached straight from the ABU-branded
+    // login flow and should carry the same light theme and university
+    // branding, not the separate dark "security console" theme the rest
+    // of the invigilator module still uses.
+    return Theme(data: abuDemoTheme(), child: Builder(builder: _buildScaffold));
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: abuCanvas,
       appBar: AppBar(
-        title: const Text('Invigilator Workstation Dashboard'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
+        foregroundColor: abuInk,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: abuLine),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/abulogo.png', height: 32),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Ahmadu Bello University, Zaria',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  'INVIGILATOR WORKSTATION DASHBOARD',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
+                    color: abuMuted,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         actions: [
           Obx(
             () => KsStatusChip(
@@ -38,16 +83,19 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
           ...buildInvigilatorTopActions(),
         ],
       ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1480,
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1480),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          return ListView(
+                return ListView(
             children: [
               _HeroHeader(controller: controller),
               const SizedBox(height: 18),
@@ -62,7 +110,7 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
                     title: 'Priority Queue',
                     subtitle:
                         'Highest-risk candidates, ranked — check these first.',
-                    child: GlassCard(
+                    child: LightPanel(
                       tone: GlassCardTone.danger,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,11 +155,15 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
                   ),
                 );
               }),
+              _EvidenceSection(controller: controller),
+              const SizedBox(height: 18),
+              _MalpracticeReportsSection(controller: controller),
+              const SizedBox(height: 18),
               KsPageSection(
                 title: 'Search & Filter',
                 subtitle:
                     'Locate workstations by seat, candidate, hall, or whitelist state.',
-                child: GlassCard(
+                child: LightPanel(
                   tone: GlassCardTone.primary,
                   child: Column(
                     children: [
@@ -243,6 +295,41 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
                 ),
               ),
               const SizedBox(height: 18),
+              Obx(() {
+                final hall = controller.selectedHall.value;
+                if (hall == 'All Halls') return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: KsPageSection(
+                    title: 'Whole-Hall Controls',
+                    subtitle: 'Pause, resume, or terminate every candidate currently in $hall.',
+                    child: LightPanel(
+                      tone: GlassCardTone.warning,
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => controller.pauseHall(hall),
+                            icon: const Icon(Icons.pause_circle_outline),
+                            label: Text('Pause $hall'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () => controller.resumeHall(hall),
+                            icon: const Icon(Icons.play_circle_outline),
+                            label: Text('Resume $hall'),
+                          ),
+                          FilledButton.tonalIcon(
+                            onPressed: () => _confirmTerminateHall(context, controller, hall),
+                            icon: const Icon(Icons.gpp_bad_outlined),
+                            label: Text('Terminate $hall'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
               KsPageSection(
                 title: 'Workstation Records',
                 subtitle:
@@ -257,7 +344,7 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
                   final items = controller.filteredRecords;
 
                   if (items.isEmpty) {
-                    return GlassCard(
+                    return LightPanel(
                       child: Text(
                         'No workstation records match your filter.',
                         style: TextStyle(
@@ -285,7 +372,10 @@ class InvigilatorDashboardView extends GetView<InvigilatorDashboardController> {
               ),
             ],
           );
-        }),
+              }),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -300,7 +390,7 @@ class _HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GlassCard(
+    return LightPanel(
       tone: GlassCardTone.primary,
       showGlow: true,
       padding: const EdgeInsets.all(22),
@@ -394,49 +484,49 @@ class _SummaryRow extends StatelessWidget {
       spacing: 14,
       runSpacing: 14,
       children: [
-        KsStatCard(
+        LightStatCard(
           title: 'Total Workstations',
           value: '${controller.totalCount}',
           icon: Icons.computer_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Whitelisted',
           value: '${controller.whitelistedCount}',
           icon: Icons.verified_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Pending',
           value: '${controller.pendingCount}',
           icon: Icons.pending_actions_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'In Exam',
           value: '${controller.activeExamCount}',
           icon: Icons.task_alt_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Risk Flags',
           value: '${controller.riskFlaggedCount}',
           icon: Icons.gpp_bad_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Critical Risk',
           value: '${controller.criticalRiskCount}',
           icon: Icons.warning_amber_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Check-In Mismatch',
           value: '${controller.checkInMismatchCount}',
           icon: Icons.badge_outlined,
           width: 240,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Similar Answers (AI)',
           value: '${controller.similarityFlaggedCount}',
           icon: Icons.compare_arrows_outlined,
@@ -457,7 +547,7 @@ class _WorkstationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GlassCard(
+    return LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -533,6 +623,30 @@ class _WorkstationCard extends StatelessWidget {
                         vertical: 7,
                       ),
                     ),
+                  if (record.isPaused)
+                    const KsStatusChip(
+                      label: 'Paused',
+                      tone: KsStatusChipTone.warning,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                    ),
+                  if (controller
+                      .malpracticeReportsFor(record.workstationId)
+                      .isNotEmpty)
+                    KsStatusChip(
+                      label: controller
+                              .malpracticeReportsFor(record.workstationId)
+                              .any((r) => r.escalated)
+                          ? 'Malpractice — Escalated'
+                          : 'Malpractice Reported',
+                      tone: KsStatusChipTone.danger,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                    ),
                 ],
               );
 
@@ -550,7 +664,7 @@ class _WorkstationCard extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          Divider(color: Colors.white.withValues(alpha: 0.07)),
+          const Divider(color: abuLine),
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -597,10 +711,8 @@ class _WorkstationCard extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(18),
-                          color: Colors.white.withValues(alpha: 0.04),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.06),
-                          ),
+                          color: abuCanvas,
+                          border: Border.all(color: abuLine),
                         ),
                         child: Text(
                           'No candidate logged in.',
@@ -800,6 +912,67 @@ class _WorkstationCard extends StatelessWidget {
               ),
             ),
           ],
+          for (final report in controller.malpracticeReportsFor(record.workstationId)) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                border: Border.all(
+                  color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.gpp_bad_outlined,
+                        color: Color(0xFFF59E0B),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Malpractice: ${report.type.name} '
+                          '(${report.severity.name.toUpperCase()})',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFF59E0B),
+                          ),
+                        ),
+                      ),
+                      if (report.escalated)
+                        const KsStatusChip(
+                          label: 'Escalated',
+                          tone: KsStatusChipTone.warningSoft,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    report.description,
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.88),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Action taken: ${report.actionTaken}',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.72),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 18),
           const Text(
             'Primary Actions',
@@ -822,6 +995,12 @@ class _WorkstationCard extends StatelessWidget {
                 icon: const Icon(Icons.report_problem_outlined),
                 label: const Text('Incident'),
               ),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    Get.toNamed(Routes.malpracticeReport, arguments: record),
+                icon: const Icon(Icons.gpp_bad_outlined),
+                label: const Text('Malpractice'),
+              ),
               if (record.status != WorkstationStatus.whitelisted)
                 FilledButton.tonalIcon(
                   onPressed: () => controller.approve(record),
@@ -840,6 +1019,25 @@ class _WorkstationCard extends StatelessWidget {
                   icon: const Icon(Icons.block_outlined),
                   label: const Text('Revoke'),
                 ),
+              if (record.candidateName.isNotEmpty) ...[
+                if (!record.isPaused)
+                  OutlinedButton.icon(
+                    onPressed: () => controller.pauseCandidate(record),
+                    icon: const Icon(Icons.pause_circle_outline),
+                    label: const Text('Pause Exam'),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: () => controller.resumeCandidate(record),
+                    icon: const Icon(Icons.play_circle_outline),
+                    label: const Text('Resume Exam'),
+                  ),
+                FilledButton.tonalIcon(
+                  onPressed: () => _confirmTerminateRecord(context, controller, record),
+                  icon: const Icon(Icons.gpp_bad_outlined),
+                  label: const Text('Terminate Exam'),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -967,6 +1165,476 @@ Widget riskLevelChip(String level, int score) {
         tone: KsStatusChipTone.info,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       );
+  }
+}
+
+class _EvidenceSection extends StatelessWidget {
+  const _EvidenceSection({required this.controller});
+
+  final InvigilatorDashboardController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final events = controller.evidenceEvents;
+      if (events.isEmpty) return const SizedBox.shrink();
+
+      return KsPageSection(
+        title: 'Detection Evidence',
+        subtitle:
+            'Flagged by each workstation\'s local detector — phone, identity '
+            'mismatch, elevated talking, unauthorized USB device. Timing and '
+            '(where relevant) a confidence score only — never a saved photo '
+            'or recorded audio. Review before acting.',
+        child: LightPanel(
+          tone: GlassCardTone.danger,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final event in events) ...[
+                _EvidenceCard(controller: controller, event: event),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _EvidenceCard extends StatelessWidget {
+  const _EvidenceCard({required this.controller, required this.event});
+
+  final InvigilatorDashboardController controller;
+  final EvidenceEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final confidence = event.confidence;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFEF4444).withValues(alpha: 0.10),
+        border: Border.all(
+          color: const Color(0xFFEF4444).withValues(alpha: 0.30),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  '${event.hallName} • Seat ${event.seatNumber} — '
+                  '${event.candidateName.isEmpty ? event.workstationId : event.candidateName}',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                ),
+              ),
+              const SizedBox(width: 8),
+              KsStatusChip(
+                label: _evidenceTypeLabel(event.evidenceType),
+                tone: KsStatusChipTone.danger,
+              ),
+              if (confidence != null) ...[
+                const SizedBox(width: 8),
+                KsStatusChip(
+                  label: '${(confidence * 100).round()}%',
+                  tone: confidence >= 0.85
+                      ? KsStatusChipTone.danger
+                      : KsStatusChipTone.warning,
+                ),
+              ],
+              if (event.escalated) ...[
+                const SizedBox(width: 8),
+                const KsStatusChip(
+                  label: 'Escalated',
+                  tone: KsStatusChipTone.accent,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (event.details.isNotEmpty) ...[
+            Text(
+              event.details,
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.86),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
+          Text(
+            '${event.examTitle.isEmpty ? 'Exam' : event.examTitle} • '
+            'Detected ${event.detectedAtIso}',
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.72),
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: event.escalated
+                    ? null
+                    : () => controller.escalateEvidenceEvent(event),
+                icon: const Icon(Icons.priority_high_outlined),
+                label: Text(event.escalated ? 'Escalated' : 'Escalate to Exam Officer'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => Get.toNamed(
+                  Routes.malpracticeReport,
+                  arguments: event,
+                ),
+                icon: const Icon(Icons.gpp_bad_outlined),
+                label: const Text('File Malpractice Report'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () => _confirmTerminate(context, controller, event),
+                icon: const Icon(Icons.block_outlined),
+                label: const Text('Terminate Exam'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _evidenceTypeLabel(String evidenceType) {
+    switch (evidenceType) {
+      case EvidenceType.phone:
+        return 'Possible Phone';
+      case EvidenceType.identity:
+        return 'Identity Mismatch';
+      case EvidenceType.talking:
+        return 'Elevated Talking';
+      case EvidenceType.usb:
+        return 'USB Device';
+      default:
+        return 'Detection';
+    }
+  }
+}
+
+Future<void> _confirmTerminate(
+  BuildContext context,
+  InvigilatorDashboardController controller,
+  EvidenceEvent event,
+) async {
+  final reasonController = TextEditingController(
+    text: 'Seat ${event.seatNumber}: ${event.details.isEmpty ? 'possible exam malpractice' : event.details}',
+  );
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      icon: const Icon(Icons.gpp_bad_outlined, color: Color(0xFFEF4444), size: 32),
+      title: const Text('Terminate this exam?'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This immediately ends the exam for '
+              '${event.candidateName.isEmpty ? 'seat ${event.seatNumber}' : event.candidateName} '
+              'if their workstation is currently connected. This cannot be undone.',
+              style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: reasonController,
+              minLines: 2,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Reason'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Terminate Exam'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    controller.terminateExam(
+      workstationId: event.workstationId,
+      seatLabel: 'seat ${event.seatNumber}',
+      reason: reasonController.text.trim(),
+    );
+  }
+  reasonController.dispose();
+}
+
+/// Same confirmation flow as [_confirmTerminate], generalized for a
+/// workstation card's own "Terminate Exam" action rather than one raised
+/// from a detected evidence event.
+Future<void> _confirmTerminateRecord(
+  BuildContext context,
+  InvigilatorDashboardController controller,
+  InvigilatorWorkstationRecord record,
+) async {
+  final reasonController = TextEditingController();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      icon: const Icon(Icons.gpp_bad_outlined, color: Color(0xFFEF4444), size: 32),
+      title: const Text('Terminate this exam?'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This immediately ends the exam for '
+              '${record.candidateName.isEmpty ? 'seat ${record.seatNumber}' : record.candidateName} '
+              'if their workstation is currently connected. This cannot be undone.',
+              style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: reasonController,
+              minLines: 2,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Reason'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Terminate Exam'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    controller.terminateExam(
+      workstationId: record.workstationId,
+      seatLabel: 'seat ${record.seatNumber}',
+      reason: reasonController.text.trim(),
+    );
+  }
+  reasonController.dispose();
+}
+
+Future<void> _confirmTerminateHall(
+  BuildContext context,
+  InvigilatorDashboardController controller,
+  String hallName,
+) async {
+  final reasonController = TextEditingController();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => AlertDialog(
+      icon: const Icon(Icons.gpp_bad_outlined, color: Color(0xFFEF4444), size: 32),
+      title: Text('Terminate every exam in $hallName?'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This immediately ends the exam for every candidate currently '
+              'active in this hall whose workstation is connected. This cannot be undone.',
+              style: TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: reasonController,
+              minLines: 2,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Reason'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Terminate Hall'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    controller.terminateHall(hallName, reason: reasonController.text.trim());
+  }
+  reasonController.dispose();
+}
+
+class _MalpracticeReportsSection extends StatelessWidget {
+  const _MalpracticeReportsSection({required this.controller});
+
+  final InvigilatorDashboardController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final reports = controller.malpracticeReports;
+      if (reports.isEmpty) return const SizedBox.shrink();
+
+      return KsPageSection(
+        title: 'Malpractice Reports',
+        subtitle: 'Filed by invigilators for this center, newest first.',
+        child: LightPanel(
+          tone: GlassCardTone.warning,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final report in reports) ...[
+                _MalpracticeReportCard(controller: controller, report: report),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class _MalpracticeReportCard extends StatelessWidget {
+  const _MalpracticeReportCard({required this.controller, required this.report});
+
+  final InvigilatorDashboardController controller;
+  final MalpracticeReportModel report;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: abuCanvas,
+        border: Border.all(color: abuLine),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  '${report.hallName} • Seat ${report.seatNumber} — '
+                  '${report.candidateName.isEmpty ? report.workstationId : report.candidateName}',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                ),
+              ),
+              const SizedBox(width: 8),
+              KsStatusChip(
+                label: _severityLabel(report.severity),
+                tone: report.severity == MalpracticeSeverity.critical ||
+                        report.severity == MalpracticeSeverity.severe
+                    ? KsStatusChipTone.danger
+                    : KsStatusChipTone.warning,
+              ),
+              if (report.escalated) ...[
+                const SizedBox(width: 8),
+                const KsStatusChip(
+                  label: 'Escalated',
+                  tone: KsStatusChipTone.accent,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            report.description,
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.86),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Reported by ${report.reportedBy.isEmpty ? 'invigilator' : report.reportedBy} '
+            'at ${report.reportedAtIso}',
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.62),
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: report.escalated
+                    ? null
+                    : () => controller.escalateMalpracticeReport(report),
+                icon: const Icon(Icons.priority_high_outlined),
+                label: Text(report.escalated ? 'Escalated' : 'Escalate to Exam Officer'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _severityLabel(MalpracticeSeverity severity) {
+    switch (severity) {
+      case MalpracticeSeverity.moderate:
+        return 'Moderate';
+      case MalpracticeSeverity.major:
+        return 'Major';
+      case MalpracticeSeverity.severe:
+        return 'Severe';
+      case MalpracticeSeverity.critical:
+        return 'Critical';
+    }
   }
 }
 

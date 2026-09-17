@@ -53,6 +53,7 @@ class FakeObjectDetector extends ObjectDetectionService {
   Future<void> start(
     void Function(String) onFlag, {
     void Function(String)? onStatus,
+    EvidenceCallback? onEvidence,
     String? referencePhotoPath,
     int? durationSeconds,
   }) async {

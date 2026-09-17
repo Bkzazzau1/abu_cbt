@@ -213,7 +213,7 @@ def load_reference_face(path, cascade):
     return cv2.resize(image[y : y + h, x : x + w], (200, 200))
 
 
-def run(args, emit, stop):
+def run(args, emit, stop, start_stdin_watcher):
     # Never ask the inference library to resolve/download a missing model.
     model_path = Path(args.model).resolve()
     if not model_path.is_file():
@@ -238,6 +238,12 @@ def run(args, emit, stop):
                       classes=phone_ids, imgsz=640, verbose=False, save=False)
         emit({"kind": "checked", "model": model_path.name})
         return
+
+    # Starting this thread earlier (e.g. before the torch/ultralytics imports
+    # above) reliably wedges those libraries' native thread-pool init on
+    # Windows — the process never crashes or errors, it just never emits
+    # another line. Only start it once the heavy native imports are done.
+    start_stdin_watcher()
 
     # --- Identity snapshot check (optional; needs a reference photo). ---
     face_cascade = None
@@ -379,12 +385,12 @@ def main():
             if line.strip() == "stop":
                 break
         stop.set()
-    if not args.check:
+    def start_stdin_watcher():
         threading.Thread(target=parent_commands, daemon=True).start()
     try:
         # Library diagnostics must never corrupt the JSON protocol on stdout.
         with contextlib.redirect_stdout(sys.stderr):
-            run(args, emit, stop)
+            run(args, emit, stop, start_stdin_watcher)
         return 0
     except Exception as error:
         emit({"kind": "error", "message": str(error)[:300]})

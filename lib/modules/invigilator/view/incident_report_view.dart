@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
 import '../../../data/models/incident_models.dart';
 import '../controller/incident_report_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class IncidentReportView extends GetView<IncidentReportController> {
@@ -14,20 +14,14 @@ class IncidentReportView extends GetView<IncidentReportController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Incident Reporting'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(showSeatMap: true),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1180,
-        child: Obx(
+    return InvigilatorLightScaffold(
+      title: 'Incident Reporting',
+      actions: buildInvigilatorTopActions(showSeatMap: true),
+      maxContentWidth: 1180,
+      body: Obx(
           () => ListView(
             children: [
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -76,7 +70,7 @@ class IncidentReportView extends GetView<IncidentReportController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -105,7 +99,7 @@ class IncidentReportView extends GetView<IncidentReportController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -135,7 +129,7 @@ class IncidentReportView extends GetView<IncidentReportController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -160,7 +154,7 @@ class IncidentReportView extends GetView<IncidentReportController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Text(
                 'Tip: Include enough detail for later review by exam officers, '
                 'support team, or management.',
@@ -186,7 +180,6 @@ class IncidentReportView extends GetView<IncidentReportController> {
             ],
           ),
         ),
-      ),
     );
   }
 

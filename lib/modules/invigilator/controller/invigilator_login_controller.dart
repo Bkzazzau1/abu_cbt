@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../data/services/invigilator_session.dart';
 
 class InvigilatorLoginController extends GetxController {
   static const Map<String, String> _credentials = {
@@ -43,6 +44,7 @@ class InvigilatorLoginController extends GetxController {
     await Future.delayed(const Duration(milliseconds: 500));
     isLoading.value = false;
 
+    InvigilatorSession.currentName = normalizedUsername;
     Get.offAllNamed(Routes.invigilatorDashboard);
   }
 }

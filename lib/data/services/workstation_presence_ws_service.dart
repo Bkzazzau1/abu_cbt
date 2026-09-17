@@ -89,6 +89,105 @@ class WorkstationPresenceWsService extends GetxService {
     _channel!.sink.add(jsonEncode(envelope));
   }
 
+  /// Sent by a candidate's exam workstation the moment the local detector
+  /// flags something (phone, identity mismatch, elevated talking, an
+  /// unauthorized USB device — see [EvidenceType]), so it shows up as
+  /// evidence on the invigilator dashboard immediately rather than waiting
+  /// for the next heartbeat/submission.
+  void sendEvidenceEvent({
+    required String workstationId,
+    required String centerName,
+    required String hallName,
+    required String seatNumber,
+    required String registrationNumber,
+    required String candidateName,
+    required String examTitle,
+    required String evidenceType,
+    double? confidence,
+    String details = '',
+    required String detectedAtIso,
+  }) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'evidenceDetected',
+      'payload': {
+        'workstationId': workstationId,
+        'centerName': centerName,
+        'hallName': hallName,
+        'seatNumber': seatNumber,
+        'registrationNumber': registrationNumber,
+        'candidateName': candidateName,
+        'examTitle': examTitle,
+        'evidenceType': evidenceType,
+        'confidence': confidence,
+        'details': details,
+        'detectedAtIso': detectedAtIso,
+      },
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
+  /// Sent by the invigilator app to force one specific candidate's exam to
+  /// end immediately. Delivered only if that workstation is currently
+  /// connected — there is no queued/offline delivery.
+  void sendTerminateExam({
+    required String workstationId,
+    required String reason,
+    required String issuedBy,
+  }) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'terminateExam',
+      'workstationId': workstationId,
+      'reason': reason,
+      'issuedBy': issuedBy,
+      'issuedAtIso': DateTime.now().toIso8601String(),
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
+  /// Sent by the invigilator app to hand an evidence event to the exam
+  /// officer for review.
+  void sendEscalateEvidenceEvent({
+    required String eventId,
+    required String escalatedBy,
+  }) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'escalateEvidenceEvent',
+      'eventId': eventId,
+      'escalatedBy': escalatedBy,
+      'escalatedAtIso': DateTime.now().toIso8601String(),
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
+  /// Sent by the invigilator app to file a formal malpractice report.
+  void sendMalpracticeReport(Map<String, dynamic> payload) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'submitMalpracticeReport',
+      'payload': payload,
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
+  /// Sent by the invigilator app to hand a filed malpractice report to the
+  /// exam officer for review.
+  void sendEscalateMalpracticeReport({
+    required String reportId,
+    required String escalatedBy,
+  }) {
+    if (_channel == null) return;
+    final envelope = <String, dynamic>{
+      'kind': 'escalateMalpracticeReport',
+      'reportId': reportId,
+      'escalatedBy': escalatedBy,
+      'escalatedAtIso': DateTime.now().toIso8601String(),
+    };
+    _channel!.sink.add(jsonEncode(envelope));
+  }
+
   Future<void> disconnect() async {
     await _subscription?.cancel();
     _subscription = null;

@@ -2,6 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+/// Fired when the local detector flags something worth structured evidence
+/// (not every plain-text flag needs one). `confidence` is null for evidence
+/// types without a natural numeric score.
+typedef EvidenceCallback =
+    void Function({
+      required String evidenceType,
+      double? confidence,
+      required String details,
+      required DateTime capturedAt,
+    });
+
 class ObjectDetectionService {
   Process? _process;
   Timer? _watchdog;
@@ -10,23 +21,43 @@ class ObjectDetectionService {
   DateTime _lastMessage = DateTime.now();
   bool _ready = false;
 
+  // Mutable so a later caller (the exam screen re-attaching to monitoring
+  // that was already started at login) can redirect where flags/status/
+  // popups go without tearing down and re-opening the camera.
+  void Function(String) _onFlag = (_) {};
+  void Function(String)? _onStatus;
+  EvidenceCallback? _onEvidence;
+
+  /// Starts local detection, or — if it's already running (typically because
+  /// [start] was already called once at login) — just re-targets the given
+  /// callbacks onto the running process instead of restarting it. This lets
+  /// monitoring begin the moment a candidate logs in and keep running
+  /// uninterrupted as they move from the portal into an exam, while each
+  /// screen still gets its own flag/audit handling.
   Future<void> start(
     void Function(String) onFlag, {
     void Function(String)? onStatus,
+    EvidenceCallback? onEvidence,
     String? referencePhotoPath,
     int? durationSeconds,
   }) async {
-    if (_active) return;
+    _onFlag = onFlag;
+    _onStatus = onStatus;
+    _onEvidence = onEvidence;
+    if (_active) {
+      onStatus?.call(_ready ? 'Active' : 'Starting');
+      return;
+    }
     _active = true;
     final generation = ++_generation;
     void fail(String message) {
       if (!_active || generation != _generation) return;
-      onStatus?.call('Unavailable');
-      onFlag('Object detection unavailable: $message');
+      _onStatus?.call('Unavailable');
+      _onFlag('Object detection unavailable: $message');
       unawaited(stop());
     }
 
-    onStatus?.call('Starting');
+    _onStatus?.call('Starting');
     if (!Platform.isWindows) {
       fail('requires the Windows desktop app.');
       return;
@@ -63,6 +94,11 @@ class ObjectDetectionService {
           model,
           '--camera',
           Platform.environment['ABU_CAMERA_INDEX'] ?? '0',
+          // Sample every second (the fastest the worker allows) instead of
+          // the 3s default, so a phone in view is caught and flagged almost
+          // immediately rather than after several seconds of visible delay.
+          '--interval',
+          '1',
           if (referencePhotoPath != null && referencePhotoPath.isNotEmpty) ...[
             '--reference-photo',
             referencePhotoPath,
@@ -93,7 +129,7 @@ class ObjectDetectionService {
           } else if (event['kind'] == 'status' && event['status'] == 'active') {
             _ready = true;
             _lastMessage = DateTime.now();
-            onStatus?.call('Active');
+            _onStatus?.call('Active');
           } else if (event['kind'] == 'phone') {
             final confidence = (event['confidence'] as num).toDouble();
             final timestamp = DateTime.parse(
@@ -102,9 +138,15 @@ class ObjectDetectionService {
             if (!confidence.isFinite || confidence < 0.65 || confidence > 1) {
               return;
             }
-            onFlag(
+            _onFlag(
               'Possible phone detected at ${timestamp.toIso8601String()} '
               '(${(confidence * 100).round()}% model confidence). Officer review required.',
+            );
+            _onEvidence?.call(
+              evidenceType: 'phone',
+              confidence: confidence,
+              details: 'Possible phone in view.',
+              capturedAt: timestamp,
             );
           } else if (event['kind'] == 'identity') {
             final match = event['match'] == true;
@@ -113,29 +155,44 @@ class ObjectDetectionService {
             final timestamp = DateTime.tryParse(
               (event['capturedAtIso'] ?? '').toString(),
             )?.toUtc();
-            onFlag(
+            _onFlag(
               'Identity snapshot did not match the enrolled photo'
               '${timestamp != null ? ' at ${timestamp.toIso8601String()}' : ''}'
               '${distance != null ? ' (distance ${distance.toStringAsFixed(1)})' : ''}. '
               'Officer review required — possible impersonation.',
+            );
+            _onEvidence?.call(
+              evidenceType: 'identity',
+              details: distance != null
+                  ? 'Identity snapshot did not match the enrolled photo '
+                        '(distance ${distance.toStringAsFixed(1)}).'
+                  : 'Identity snapshot did not match the enrolled photo.',
+              capturedAt: timestamp ?? DateTime.now().toUtc(),
             );
           } else if (event['kind'] == 'talking') {
             final ratio = (event['speechRatio'] as num?)?.toDouble();
             final timestamp = DateTime.tryParse(
               (event['capturedAtIso'] ?? '').toString(),
             )?.toUtc();
-            onFlag(
+            _onFlag(
               'Elevated talking detected near this seat'
               '${timestamp != null ? ' at ${timestamp.toIso8601String()}' : ''}'
               '${ratio != null ? ' (${(ratio * 100).round()}% of recent audio)' : ''}. '
               'No audio was recorded or transcribed — officer should check in person.',
             );
+            _onEvidence?.call(
+              evidenceType: 'talking',
+              confidence: ratio,
+              details: 'Elevated talking near this seat. No audio was '
+                  'recorded or transcribed.',
+              capturedAt: timestamp ?? DateTime.now().toUtc(),
+            );
           } else if (event['kind'] == 'status') {
             final status = (event['status'] ?? '').toString();
             if (status == 'audio_unavailable') {
-              onStatus?.call('Camera active, microphone unavailable');
+              _onStatus?.call('Camera active, microphone unavailable');
             } else if (status == 'identity_reference_invalid') {
-              onStatus?.call('Camera active, identity checks disabled');
+              _onStatus?.call('Camera active, identity checks disabled');
             }
           }
         } catch (_) {
@@ -156,6 +213,16 @@ class ObjectDetectionService {
     } catch (_) {
       fail('could not start the local Python runtime.');
     }
+  }
+
+  /// Detaches the caller's callbacks without stopping the underlying
+  /// process — used when a screen (e.g. the exam view) is done with
+  /// monitoring but the session-level detector (started at login) should
+  /// keep running for the rest of the candidate's time at this workstation.
+  void detach() {
+    _onFlag = (_) {};
+    _onStatus = null;
+    _onEvidence = null;
   }
 
   Future<void> stop() async {

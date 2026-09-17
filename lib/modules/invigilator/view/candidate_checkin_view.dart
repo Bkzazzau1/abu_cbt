@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/checkin_models.dart';
 import '../controller/candidate_checkin_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class CandidateCheckInView extends GetView<CandidateCheckInController> {
@@ -16,17 +16,11 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Candidate Check-In'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(showSeatMap: true),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1280,
-        child: Obx(() {
+    return InvigilatorLightScaffold(
+      title: 'Candidate Check-In',
+      actions: buildInvigilatorTopActions(showSeatMap: true),
+      maxContentWidth: 1280,
+      body: Obx(() {
           final record = controller.record.value;
           if (record == null) {
             return const Center(
@@ -36,7 +30,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
 
           return ListView(
             children: [
-            GlassCard(
+            LightPanel(
               child: Row(
                 children: [
                   CircleAvatar(
@@ -80,7 +74,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,7 +90,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -129,7 +123,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -153,7 +147,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -208,7 +202,7 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
               ),
             ),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Text(
                 'Tip: Candidate should only proceed when seat, identity, '
                 'workstation and exam allocation are all correct.',
@@ -222,7 +216,6 @@ class CandidateCheckInView extends GetView<CandidateCheckInController> {
             ],
           );
         }),
-      ),
     );
   }
 

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
+import '../../../core/widgets/glass_card.dart' show GlassCardTone;
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/malpractice_models.dart';
 import '../controller/malpractice_report_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class MalpracticeReportView extends GetView<MalpracticeReportController> {
@@ -15,20 +16,14 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Malpractice Report'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(showSeatMap: true),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1180,
-        child: Obx(
+    return InvigilatorLightScaffold(
+      title: 'Malpractice Report',
+      actions: buildInvigilatorTopActions(showSeatMap: true),
+      maxContentWidth: 1180,
+      body: Obx(
           () => ListView(
             children: [
-              GlassCard(
+              LightPanel(
                 tone: GlassCardTone.danger,
                 showGlow: true,
                 padding: const EdgeInsets.all(22),
@@ -65,7 +60,7 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
                 builder: (context, constraints) {
                   final compact = constraints.maxWidth < 860;
 
-                  final contextCard = GlassCard(
+                  final contextCard = LightPanel(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +114,7 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
                     ),
                   );
 
-                  final severityCard = GlassCard(
+                  final severityCard = LightPanel(
                     tone: GlassCardTone.warning,
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -203,7 +198,7 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
                 },
               ),
               const SizedBox(height: 18),
-              GlassCard(
+              LightPanel(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,7 +232,7 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
                 ),
               ),
               const SizedBox(height: 16),
-              GlassCard(
+              LightPanel(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,7 +266,7 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
                 ),
               ),
               const SizedBox(height: 16),
-              GlassCard(
+              LightPanel(
                 tone: GlassCardTone.warning,
                 padding: const EdgeInsets.all(18),
                 child: Text(
@@ -302,7 +297,6 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
             ],
           ),
         ),
-      ),
     );
   }
 

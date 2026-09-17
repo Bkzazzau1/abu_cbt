@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/widgets/glass_card.dart';
-import '../../../core/widgets/ks_page_shell.dart';
-import '../../../core/widgets/ks_stat_card.dart';
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/attendance_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../controller/attendance_register_controller.dart';
+import '../widgets/invigilator_light_panel.dart';
+import '../widgets/invigilator_light_scaffold.dart';
 import '../widgets/invigilator_top_actions.dart';
 
 class AttendanceRegisterView extends GetView<AttendanceRegisterController> {
@@ -16,20 +15,13 @@ class AttendanceRegisterView extends GetView<AttendanceRegisterController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attendance Register'),
-        backgroundColor: Colors.transparent,
-        actions: buildInvigilatorTopActions(
+    return InvigilatorLightScaffold(
+      title: 'Attendance Register',
+      actions: buildInvigilatorTopActions(
           showAttendance: false,
           showSeatMap: true,
         ),
-      ),
-      extendBodyBehindAppBar: true,
-      body: KsPageShell(
-        padding: const EdgeInsets.fromLTRB(20, 92, 20, 20),
-        maxContentWidth: 1480,
-        child: Obx(() {
+      body: Obx(() {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -38,7 +30,7 @@ class AttendanceRegisterView extends GetView<AttendanceRegisterController> {
             children: [
             _SummaryRow(controller: controller),
             const SizedBox(height: 16),
-            GlassCard(
+            LightPanel(
               child: Column(
                 children: [
                   TextField(
@@ -81,7 +73,7 @@ class AttendanceRegisterView extends GetView<AttendanceRegisterController> {
             Obx(() {
               final items = controller.filteredRecords;
               if (items.isEmpty) {
-                return const GlassCard(
+                return const LightPanel(
                   child: Text('No attendance records found.'),
                 );
               }
@@ -103,7 +95,6 @@ class AttendanceRegisterView extends GetView<AttendanceRegisterController> {
             ],
           );
         }),
-      ),
     );
   }
 }
@@ -119,29 +110,29 @@ class _SummaryRow extends StatelessWidget {
       spacing: 12,
       runSpacing: 12,
       children: [
-        KsStatCard(
+        LightStatCard(
           title: 'Expected',
           value: '${controller.expectedCount}',
           width: 170,
-          layout: KsStatCardLayout.column,
+          layout: LightStatCardLayout.column,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Present',
           value: '${controller.presentCount}',
           width: 170,
-          layout: KsStatCardLayout.column,
+          layout: LightStatCardLayout.column,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Seated',
           value: '${controller.seatedCount}',
           width: 170,
-          layout: KsStatCardLayout.column,
+          layout: LightStatCardLayout.column,
         ),
-        KsStatCard(
+        LightStatCard(
           title: 'Absent',
           value: '${controller.absentCount}',
           width: 170,
-          layout: KsStatCardLayout.column,
+          layout: LightStatCardLayout.column,
         ),
       ],
     );
@@ -156,7 +147,7 @@ class _AttendanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    return LightPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

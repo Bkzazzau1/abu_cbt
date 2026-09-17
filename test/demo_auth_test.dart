@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:abu_zaria_cbt/main.dart';
 import 'package:abu_zaria_cbt/app/routes/app_routes.dart';
+import 'package:abu_zaria_cbt/data/services/invigilator_session.dart';
 import 'package:abu_zaria_cbt/modules/auth/demo_auth.dart';
 import 'package:abu_zaria_cbt/modules/portal/controller/center_exam_portal_controller.dart';
 
@@ -69,6 +71,39 @@ void main() {
       expect(DemoAuth.instance.student, isNull);
       expect(Get.isRegistered<CenterExamPortalController>(), isFalse);
       expect(Get.currentRoute, Routes.centerLogin);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'invigilator sign-in opens the real invigilator dashboard, not the '
+    'shared admin/invigilator demo workspace',
+    (tester) async {
+      // This is a Windows-desktop-only app; the default test surface
+      // (≈800x600, phone-sized) is narrower than any window a real user
+      // would actually run it at, and the dashboard's AppBar overflows
+      // there without reflecting a real bug — a live check at 1280x720+
+      // showed no overflow. Match a realistic desktop window instead.
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(const CenterExamApp());
+      await tester.pumpAndSettle();
+
+      expect(
+        await DemoAuth.instance.signIn(
+          'Invigilator',
+          'chief.invigilator',
+          'chief123',
+        ),
+        isTrue,
+      );
+      await DemoAuth.instance.openWorkspace();
+      await tester.pumpAndSettle();
+
+      expect(Get.currentRoute, Routes.invigilatorDashboard);
+      expect(InvigilatorSession.currentName, 'Chief Invigilator');
       expect(tester.takeException(), isNull);
     },
   );

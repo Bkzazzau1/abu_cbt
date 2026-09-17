@@ -1,4 +1,6 @@
 import 'invigilator_models.dart';
+import 'malpractice_models.dart';
+import 'evidence_models.dart';
 import 'workstation_models.dart';
 
 class WorkstationPresenceRecord {
@@ -131,12 +133,26 @@ class WorkstationPresenceEnvelope {
     this.records = const <WorkstationPresenceRecord>[],
     this.record,
     this.errorMessage,
+    this.evidenceEvents = const <EvidenceEvent>[],
+    this.evidenceEvent,
+    this.malpracticeReports = const <MalpracticeReportModel>[],
+    this.malpracticeReport,
+    this.commandAction,
+    this.commandReason,
+    this.commandIssuedBy,
   });
 
   final String kind;
   final List<WorkstationPresenceRecord> records;
   final WorkstationPresenceRecord? record;
   final String? errorMessage;
+  final List<EvidenceEvent> evidenceEvents;
+  final EvidenceEvent? evidenceEvent;
+  final List<MalpracticeReportModel> malpracticeReports;
+  final MalpracticeReportModel? malpracticeReport;
+  final String? commandAction;
+  final String? commandReason;
+  final String? commandIssuedBy;
 
   factory WorkstationPresenceEnvelope.fromJson(Map<String, dynamic> json) {
     final kind = (json['kind'] ?? '').toString();
@@ -159,6 +175,57 @@ class WorkstationPresenceEnvelope {
           ),
         );
       }
+    }
+
+    if (kind == 'evidenceSnapshot') {
+      final list = (json['events'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .map(EvidenceEvent.fromJson)
+          .toList();
+      return WorkstationPresenceEnvelope(kind: kind, evidenceEvents: list);
+    }
+
+    if (kind == 'evidenceUpdate') {
+      final raw = json['event'];
+      if (raw is Map) {
+        return WorkstationPresenceEnvelope(
+          kind: kind,
+          evidenceEvent: EvidenceEvent.fromJson(
+            Map<String, dynamic>.from(raw),
+          ),
+        );
+      }
+    }
+
+    if (kind == 'malpracticeSnapshot') {
+      final list = (json['reports'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .map(MalpracticeReportModel.fromJson)
+          .toList();
+      return WorkstationPresenceEnvelope(kind: kind, malpracticeReports: list);
+    }
+
+    if (kind == 'malpracticeUpdate') {
+      final raw = json['report'];
+      if (raw is Map) {
+        return WorkstationPresenceEnvelope(
+          kind: kind,
+          malpracticeReport: MalpracticeReportModel.fromJson(
+            Map<String, dynamic>.from(raw),
+          ),
+        );
+      }
+    }
+
+    if (kind == 'command') {
+      return WorkstationPresenceEnvelope(
+        kind: kind,
+        commandAction: (json['action'] ?? '').toString(),
+        commandReason: (json['reason'] ?? '').toString(),
+        commandIssuedBy: (json['issuedBy'] ?? '').toString(),
+      );
     }
 
     if (kind == 'error') {

@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/ks_status_chip.dart';
+import '../../demo/abu_demo_theme.dart';
 
 class ScientificCalculatorDialog extends StatefulWidget {
   const ScientificCalculatorDialog({super.key});
@@ -56,7 +56,14 @@ class _ScientificCalculatorDialogState
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    // Self-contained rather than relying on an ambient Theme: this dialog is
+    // opened via showDialog's default root navigator, which sits outside the
+    // exam screen's local abuDemoTheme wrapper and would otherwise fall back
+    // to the app's separate dark theme, mismatching the rest of the exam UI.
+    return Theme(data: abuDemoTheme(), child: Builder(builder: _buildDialog));
+  }
+
+  Widget _buildDialog(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final availableWidth = mediaQuery.size.width - 40;
     final availableHeight =
@@ -73,10 +80,20 @@ class _ScientificCalculatorDialogState
       child: SizedBox(
         width: dialogWidth,
         height: dialogHeight,
-        child: GlassCard(
-          tone: GlassCardTone.primary,
-          showGlow: true,
+        child: Container(
           padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: abuLine),
+            boxShadow: [
+              BoxShadow(
+                color: abuInk.withValues(alpha: 0.12),
+                blurRadius: 28,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final compactWidth = constraints.maxWidth < 480;
@@ -91,12 +108,9 @@ class _ScientificCalculatorDialogState
                 children: [
                   _buildHeader(context, compactWidth),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Use the calculator without leaving the exam workspace.',
-                    style: TextStyle(
-                      color: cs.onSurface.withValues(alpha: 0.74),
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(color: abuMuted, fontWeight: FontWeight.w600),
                   ),
                   SizedBox(height: bodySpacing),
                   Expanded(
@@ -109,11 +123,9 @@ class _ScientificCalculatorDialogState
                             width: double.infinity,
                             padding: EdgeInsets.all(displayPadding),
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              color: Colors.white.withValues(alpha: 0.05),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              color: abuCanvas,
+                              border: Border.all(color: abuLine),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
@@ -147,9 +159,7 @@ class _ScientificCalculatorDialogState
                                         : _displayExpression(_expression),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
-                                      color: cs.onSurface.withValues(
-                                        alpha: 0.76,
-                                      ),
+                                      color: abuMuted,
                                       fontSize: expressionFontSize,
                                       fontWeight: FontWeight.w700,
                                       fontFamily: 'Courier New',
@@ -168,8 +178,8 @@ class _ScientificCalculatorDialogState
                                     textAlign: TextAlign.right,
                                     style: TextStyle(
                                       color: _result == 'Error'
-                                          ? cs.error
-                                          : cs.primary,
+                                          ? const Color(0xFFB42318)
+                                          : abuGreen,
                                       fontSize: resultFontSize,
                                       fontWeight: FontWeight.w900,
                                       fontFamily: 'Courier New',
@@ -422,13 +432,13 @@ class _ScientificCalculatorDialogState
     return rounded.toString();
   }
 
-  GlassCardTone _toneForLabel(String label) {
+  _CalcButtonTone _toneForLabel(String label) {
     switch (label) {
       case '=':
-        return GlassCardTone.success;
+        return _CalcButtonTone.equals;
       case 'AC':
       case '⌫':
-        return GlassCardTone.warning;
+        return _CalcButtonTone.danger;
       case '÷':
       case '×':
       case '−':
@@ -441,12 +451,14 @@ class _ScientificCalculatorDialogState
       case 'log':
       case '√':
       case '1/x':
-        return GlassCardTone.primary;
+        return _CalcButtonTone.function;
       default:
-        return GlassCardTone.normal;
+        return _CalcButtonTone.numeral;
     }
   }
 }
+
+enum _CalcButtonTone { numeral, function, danger, equals }
 
 class _CalculatorButton extends StatelessWidget {
   const _CalculatorButton({
@@ -457,22 +469,44 @@ class _CalculatorButton extends StatelessWidget {
 
   final String label;
   final VoidCallback onTap;
-  final GlassCardTone tone;
+  final _CalcButtonTone tone;
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      tone: tone,
-      padding: EdgeInsets.zero,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+    final (Color background, Color foreground, Color border) = switch (tone) {
+      _CalcButtonTone.equals => (abuGreen, Colors.white, abuGreen),
+      _CalcButtonTone.danger => (
+        const Color(0xFFFFE4E2),
+        const Color(0xFFB42318),
+        const Color(0xFFFFCFC9),
+      ),
+      _CalcButtonTone.function => (
+        abuGreen.withValues(alpha: 0.08),
+        abuGreen,
+        abuGreen.withValues(alpha: 0.28),
+      ),
+      _CalcButtonTone.numeral => (abuCanvas, abuInk, abuLine),
+    };
+
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border),
+          ),
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: foreground,
+              ),
             ),
           ),
         ),

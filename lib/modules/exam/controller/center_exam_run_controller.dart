@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/routes/app_routes.dart';
 
 import '../../../data/models/center_exam_models.dart';
+import '../../../data/models/evidence_models.dart';
 import '../../../data/models/invigilator_models.dart';
 import '../../../data/models/workstation_models.dart';
 import '../../../data/models/workstation_presence_models.dart';
@@ -33,8 +32,18 @@ class CenterExamRunController extends GetxController {
     Future<HallIpRiskAssessment> Function({required String hallName})?
     assessHall,
   }) : _usbMonitor = usbMonitor ?? UsbMonitorService(),
-       _objectDetector = objectDetector ?? ObjectDetectionService(),
+       _objectDetector = objectDetector ?? _resolveObjectDetector(),
        _assessHall = assessHall ?? HallNetworkRiskService.assess;
+
+  /// Reuses the detector already running for this login session (started by
+  /// [CenterExamPortalController] the moment the candidate signed in) so the
+  /// exam screen re-attaches to it instead of opening the camera a second
+  /// time. Falls back to a standalone instance when there's no portal
+  /// session (e.g. practice mode).
+  static ObjectDetectionService _resolveObjectDetector() =>
+      Get.isRegistered<CenterExamPortalController>()
+      ? Get.find<CenterExamPortalController>().objectDetector
+      : ObjectDetectionService();
 
   final UsbMonitorService _usbMonitor;
   final ObjectDetectionService _objectDetector;
@@ -51,6 +60,8 @@ class CenterExamRunController extends GetxController {
   bool _endingExam = false;
   Future<void> _usbAuditWrite = Future<void>.value();
   String _usbAuditKey = '';
+  WorkstationRegistration? _registration;
+  StreamSubscription<WorkstationPresenceEnvelope>? _commandSub;
   final exam = Rxn<CenterExam>();
   final isLoadingExam = false.obs;
   final examLoadError = ''.obs;
@@ -108,6 +119,7 @@ class CenterExamRunController extends GetxController {
               candidateRegistrationNumber: candidate.registrationNumber,
             );
       if (isClosed) return;
+      _registration = registration;
       if (payload.questions.isEmpty) {
         examLoadError.value = 'This exam has no questions.';
         return;
@@ -127,14 +139,22 @@ class CenterExamRunController extends GetxController {
         'usb.audit.',
         'objects.audit.',
       );
+      // Monitoring normally already started at login (see
+      // CenterExamPortalController), so this call just re-attaches
+      // exam-scoped flag/audit/popup handling onto the running process —
+      // the reference photo/duration below only matter as a fallback if it
+      // wasn't already running (e.g. no portal session, as in practice mode).
       final referencePhotoPath = candidate == null
           ? null
-          : await _extractReferencePhoto(candidate.photoAsset);
+          : Get.isRegistered<CenterExamPortalController>()
+          ? Get.find<CenterExamPortalController>().referencePhotoPath
+          : null;
       await _objectDetector.start(
         _recordObjectFlag,
         onStatus: (status) {
           if (!isClosed) objectDetectionStatus.value = status;
         },
+        onEvidence: _handleEvidenceDetected,
         referencePhotoPath: referencePhotoPath,
         durationSeconds: payload.durationMinutes * 60,
       );
@@ -143,6 +163,8 @@ class CenterExamRunController extends GetxController {
         await _stopObjectDetection();
         return;
       }
+      await _listenForInvigilatorCommands();
+      if (isClosed) return;
       _startTimer();
       unawaited(_emitInExamHeartbeat());
       _presenceTimer = Timer.periodic(const Duration(seconds: 10), (_) {
@@ -182,6 +204,19 @@ class CenterExamRunController extends GetxController {
     if (!_endingExam && !isClosed && exam.value != null) {
       unawaited(_emitInExamHeartbeat());
     }
+    // A connected/removable device is a plain fact, not a model score, so
+    // it's reported as evidence without a confidence value — only the
+    // genuine "device connected" case counts as evidence; monitor
+    // diagnostics (unavailable, buffer overflow, unreadable event) aren't.
+    if (flag.startsWith('USB device connected')) {
+      unawaited(
+        _reportEvidence(
+          evidenceType: EvidenceType.usb,
+          details: flag,
+          capturedAt: DateTime.now(),
+        ),
+      );
+    }
   }
 
   void _recordObjectFlag(String flag) {
@@ -213,49 +248,183 @@ class CenterExamRunController extends GetxController {
     }
   }
 
-  Directory? _referencePhotoDir;
+  bool _phoneAlertShowing = false;
 
-  /// Copies the candidate's enrolled photo (a bundled Flutter asset) out to
-  /// a plain file the local detector subprocess can open directly — Flutter
-  /// assets live inside the app bundle, not on the filesystem, so the
-  /// Python worker has no other way to read one. Returns null (identity
-  /// checks are simply skipped) if the asset can't be loaded. Bounded by a
-  /// short timeout so a slow/broken disk never delays exam launch — this is
-  /// an auxiliary integrity feature, not something worth blocking on.
-  Future<String?> _extractReferencePhoto(String assetPath) async {
-    if (assetPath.trim().isEmpty) return null;
-    try {
-      return await _copyReferencePhoto(
-        assetPath,
-      ).timeout(const Duration(seconds: 2));
-    } catch (_) {
-      return null;
+  /// Called whenever the local detector flags anything — phone, identity
+  /// mismatch, or elevated talking. Every kind is reported as structured
+  /// evidence for the invigilator dashboard; only a phone also interrupts
+  /// the candidate with an on-screen warning, since that's the one flag a
+  /// candidate can actually act on immediately (put it away). Identity/
+  /// talking flags need an invigilator's in-room judgment, not a popup the
+  /// candidate could game by knowing exactly when they were flagged.
+  void _handleEvidenceDetected({
+    required String evidenceType,
+    double? confidence,
+    required String details,
+    required DateTime capturedAt,
+  }) {
+    unawaited(
+      _reportEvidence(
+        evidenceType: evidenceType,
+        confidence: confidence,
+        details: details,
+        capturedAt: capturedAt,
+      ),
+    );
+    if (evidenceType == EvidenceType.phone) {
+      _showPhoneDetectedAlert();
     }
   }
 
-  Future<String?> _copyReferencePhoto(String assetPath) async {
-    final bytes = await rootBundle.load(assetPath);
-    final dir = await Directory.systemTemp.createTemp('abu_reference_photo_');
-    _referencePhotoDir = dir;
-    final extension = assetPath.contains('.')
-        ? assetPath.substring(assetPath.lastIndexOf('.'))
-        : '.jpg';
-    final file = File('${dir.path}/reference$extension');
-    await file.writeAsBytes(bytes.buffer.asUint8List(), flush: true);
-    return file.path;
+  /// Interrupts the candidate immediately when a phone is detected, on top
+  /// of the flag already recorded for the invigilator — a deterrent shown
+  /// in the moment, not just a note reviewed after the fact. Guarded so a
+  /// second detection during the 30s detector cooldown can't stack dialogs.
+  void _showPhoneDetectedAlert() {
+    if (isClosed || _endingExam || _phoneAlertShowing) return;
+    _phoneAlertShowing = true;
+    Get.dialog(
+      Theme(
+        data: abuDemoTheme(),
+        child: AlertDialog(
+          icon: const Icon(
+            Icons.phonelink_erase_outlined,
+            color: Colors.red,
+            size: 32,
+          ),
+          title: const Text('Phone detected'),
+          content: const SizedBox(
+            width: 420,
+            child: Text(
+              'The camera detected a possible phone at your seat. Put it away '
+              'immediately — this has been flagged to the invigilator for review.',
+              style: TextStyle(height: 1.7),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () {
+                _phoneAlertShowing = false;
+                Get.back();
+              },
+              child: const Text('I understand'),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
+  Future<void> _reportEvidence({
+    required String evidenceType,
+    double? confidence,
+    required String details,
+    required DateTime capturedAt,
+  }) async {
+    final registration = _registration;
+    if (registration == null) return;
+    final candidate = Get.isRegistered<CenterExamPortalController>()
+        ? Get.find<CenterExamPortalController>().candidate.value
+        : null;
+    final examValue = exam.value;
+
+    final wsService = Get.isRegistered<WorkstationPresenceWsService>()
+        ? Get.find<WorkstationPresenceWsService>()
+        : Get.put(WorkstationPresenceWsService());
+    await wsService.connectWorkstation();
+    wsService.sendEvidenceEvent(
+      workstationId: registration.workstationId,
+      centerName: registration.centerName,
+      hallName: registration.hallName,
+      seatNumber: registration.seatNumber,
+      registrationNumber: candidate?.registrationNumber ?? '',
+      candidateName: candidate?.fullName ?? '',
+      examTitle: examValue == null
+          ? ''
+          : '${examValue.courseCode} - ${examValue.courseTitle}',
+      evidenceType: evidenceType,
+      confidence: confidence,
+      details: details,
+      detectedAtIso: capturedAt.toIso8601String(),
+    );
+  }
+
+  /// Subscribes to inbound messages on this candidate's own workstation
+  /// socket so an invigilator's "Terminate Exam" action (pushed as a
+  /// `command` message targeted at this one connection — see
+  /// backend/workstation_heartbeat_service) can end the exam immediately
+  /// rather than only being visible after the fact.
+  Future<void> _listenForInvigilatorCommands() async {
+    final wsService = Get.isRegistered<WorkstationPresenceWsService>()
+        ? Get.find<WorkstationPresenceWsService>()
+        : Get.put(WorkstationPresenceWsService());
+    await wsService.connectWorkstation();
+    if (isClosed) return;
+    _commandSub = wsService.incoming.listen(_handleIncomingCommand);
+  }
+
+  void _handleIncomingCommand(WorkstationPresenceEnvelope envelope) {
+    if (envelope.kind != 'command') return;
+    if (envelope.commandAction != 'terminate_exam') return;
+    _handleTerminatedByInvigilator(envelope.commandReason ?? '');
+  }
+
+  /// Ends the exam immediately on the invigilator's command, distinct from
+  /// the candidate's own timer/submit flow. Reuses the existing flag/audit
+  /// pipeline (`_recordObjectFlag`) so the reason flows into the same
+  /// heartbeat/risk-reasons trail already sent to the invigilator, rather
+  /// than needing a parallel path.
+  void _handleTerminatedByInvigilator(String reason) {
+    if (isClosed || isSubmitted.value || _endingExam) return;
+    _timer?.cancel();
+    _recordObjectFlag(
+      'Exam terminated by invigilator'
+      '${reason.trim().isEmpty ? '' : ': ${reason.trim()}'}.',
+    );
+    Get.dialog(
+      Theme(
+        data: abuDemoTheme(),
+        child: AlertDialog(
+          icon: const Icon(Icons.gpp_bad_outlined, color: Colors.red, size: 32),
+          title: const Text('Exam terminated by invigilator'),
+          content: SizedBox(
+            width: 420,
+            child: Text(
+              reason.trim().isEmpty
+                  ? 'Your invigilator has ended this exam. Your responses so '
+                        'far have been submitted for review.'
+                  : 'Your invigilator has ended this exam: ${reason.trim()}\n\n'
+                        'Your responses so far have been submitted for review.',
+              style: const TextStyle(height: 1.7),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () async {
+                Get.back();
+                await _finalizeSubmission(autoSubmitted: true);
+              },
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  /// Ends this screen's involvement with detection. When a portal session
+  /// owns the detector (started at login), monitoring must keep running for
+  /// the rest of the candidate's time at the workstation, so this only
+  /// detaches this screen's callbacks; otherwise (e.g. practice mode, with
+  /// its own standalone instance) it stops the process outright.
   Future<void> _stopObjectDetection() async {
     objectDetectionStatus.value = 'Stopped';
-    await _objectDetector.stop();
-    final dir = _referencePhotoDir;
-    _referencePhotoDir = null;
-    if (dir != null) {
-      try {
-        await dir.delete(recursive: true);
-      } catch (_) {
-        // Best-effort cleanup; a leftover temp file isn't worth failing over.
-      }
+    if (Get.isRegistered<CenterExamPortalController>()) {
+      _objectDetector.detach();
+    } else {
+      await _objectDetector.stop();
     }
   }
 
@@ -666,6 +835,10 @@ class CenterExamRunController extends GetxController {
     if (isSubmitted.value || _endingExam) return;
     final examValue = exam.value;
     if (examValue == null) return;
+    if (_phoneAlertShowing) {
+      _phoneAlertShowing = false;
+      Get.back();
+    }
     _endingExam = true;
     _presenceTimer?.cancel();
     _usbMonitor.stop();
@@ -993,6 +1166,7 @@ class CenterExamRunController extends GetxController {
     _timer?.cancel();
     _endingExam = true;
     _presenceTimer?.cancel();
+    _commandSub?.cancel();
     _usbMonitor.stop();
     unawaited(_stopObjectDetection());
     super.onClose();
