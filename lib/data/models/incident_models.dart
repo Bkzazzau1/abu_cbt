@@ -14,6 +14,7 @@ enum IncidentSeverity { low, medium, high, critical }
 
 class IncidentReportModel {
   IncidentReportModel({
+    this.id = '',
     required this.workstationId,
     required this.hallName,
     required this.seatNumber,
@@ -23,9 +24,13 @@ class IncidentReportModel {
     required this.type,
     required this.severity,
     required this.description,
+    this.actionTaken = '',
+    this.evidenceNote = '',
+    this.reportedBy = '',
     required this.reportedAtIso,
   });
 
+  final String id;
   final String workstationId;
   final String hallName;
   final String seatNumber;
@@ -35,10 +40,14 @@ class IncidentReportModel {
   final IncidentType type;
   final IncidentSeverity severity;
   final String description;
+  final String actionTaken;
+  final String evidenceNote;
+  final String reportedBy;
   final String reportedAtIso;
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'workstationId': workstationId,
       'hallName': hallName,
       'seatNumber': seatNumber,
@@ -48,6 +57,9 @@ class IncidentReportModel {
       'type': type.name,
       'severity': severity.name,
       'description': description,
+      'actionTaken': actionTaken,
+      'evidenceNote': evidenceNote,
+      'reportedBy': reportedBy,
       'reportedAtIso': reportedAtIso,
     };
   }
