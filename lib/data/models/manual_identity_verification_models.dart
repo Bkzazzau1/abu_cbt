@@ -2,6 +2,7 @@ enum ManualIdentityVerificationStatus {
   pending,
   approved,
   rejected,
+  resolvedByFingerprint,
 }
 
 enum ManualIdentityFailureReason {
@@ -36,6 +37,8 @@ extension ManualIdentityVerificationStatusLabel
         return 'Approved';
       case ManualIdentityVerificationStatus.rejected:
         return 'Rejected';
+      case ManualIdentityVerificationStatus.resolvedByFingerprint:
+        return 'Resolved by Fingerprint';
     }
   }
 }
@@ -82,6 +85,8 @@ class ManualIdentityVerificationRequest {
   bool get isPending => status == ManualIdentityVerificationStatus.pending;
   bool get isApproved => status == ManualIdentityVerificationStatus.approved;
   bool get isRejected => status == ManualIdentityVerificationStatus.rejected;
+  bool get isResolvedByFingerprint =>
+      status == ManualIdentityVerificationStatus.resolvedByFingerprint;
 
   ManualIdentityVerificationRequest copyWith({
     String? id,
