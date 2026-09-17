@@ -10,6 +10,7 @@ List<Widget> buildInvigilatorTopActions({
   bool showAttendance = true,
   bool showLiveHall = true,
   bool showSeatMap = false,
+  bool showAllocation = true,
   bool showTechnical = true,
   bool showLogout = true,
 }) {
@@ -61,6 +62,16 @@ List<Widget> buildInvigilatorTopActions({
         onPressed: () => _goPrimary(Routes.seatMap),
         icon: const Icon(Icons.grid_view_outlined),
         label: const Text('Seat Map'),
+      ),
+    );
+  }
+
+  if (showAllocation) {
+    actions.add(
+      TextButton.icon(
+        onPressed: () => _goPrimary(Routes.workstationAllocation),
+        icon: const Icon(Icons.assignment_ind_outlined),
+        label: const Text('Allocation'),
       ),
     );
   }
