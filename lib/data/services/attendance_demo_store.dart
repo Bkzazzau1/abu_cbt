@@ -93,9 +93,18 @@ class AttendanceDemoStore extends GetxService {
       );
       if (assignment == null) continue;
 
+      var nextState = current.state;
+      if (assignment.isLocked &&
+          current.state != AttendanceState.submitted &&
+          current.state != AttendanceState.absent &&
+          current.state != AttendanceState.issueFlagged) {
+        nextState = AttendanceState.inExam;
+      }
+
       if (current.hallName == assignment.hallName &&
           current.seatNumber == assignment.seatNumber &&
-          current.workstationId == assignment.workstationId) {
+          current.workstationId == assignment.workstationId &&
+          current.state == nextState) {
         continue;
       }
 
@@ -103,6 +112,7 @@ class AttendanceDemoStore extends GetxService {
         hallName: assignment.hallName,
         seatNumber: assignment.seatNumber,
         workstationId: assignment.workstationId,
+        state: nextState,
       );
       changed = true;
     }
