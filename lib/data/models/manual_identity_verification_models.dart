@@ -2,33 +2,8 @@ enum ManualIdentityVerificationStatus {
   pending,
   approved,
   rejected,
-  resolvedByFingerprint,
-}
+  resolvedByFingerprint;
 
-enum ManualIdentityFailureReason {
-  fingerprintNotMatched,
-  readerUnavailable,
-  poorScan,
-  other,
-}
-
-extension ManualIdentityFailureReasonLabel on ManualIdentityFailureReason {
-  String get label {
-    switch (this) {
-      case ManualIdentityFailureReason.fingerprintNotMatched:
-        return 'Fingerprint did not match';
-      case ManualIdentityFailureReason.readerUnavailable:
-        return 'Fingerprint reader unavailable';
-      case ManualIdentityFailureReason.poorScan:
-        return 'Fingerprint could not be read clearly';
-      case ManualIdentityFailureReason.other:
-        return 'Other biometric issue';
-    }
-  }
-}
-
-extension ManualIdentityVerificationStatusLabel
-    on ManualIdentityVerificationStatus {
   String get label {
     switch (this) {
       case ManualIdentityVerificationStatus.pending:
@@ -39,6 +14,26 @@ extension ManualIdentityVerificationStatusLabel
         return 'Rejected';
       case ManualIdentityVerificationStatus.resolvedByFingerprint:
         return 'Resolved by Fingerprint';
+    }
+  }
+}
+
+enum ManualIdentityFailureReason {
+  fingerprintNotMatched,
+  readerUnavailable,
+  poorScan,
+  other;
+
+  String get label {
+    switch (this) {
+      case ManualIdentityFailureReason.fingerprintNotMatched:
+        return 'Fingerprint did not match';
+      case ManualIdentityFailureReason.readerUnavailable:
+        return 'Fingerprint reader unavailable';
+      case ManualIdentityFailureReason.poorScan:
+        return 'Fingerprint could not be read clearly';
+      case ManualIdentityFailureReason.other:
+        return 'Other biometric issue';
     }
   }
 }
