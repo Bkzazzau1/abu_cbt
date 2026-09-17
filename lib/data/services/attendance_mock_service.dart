@@ -82,10 +82,6 @@ class AttendanceMockService {
     return AttendanceState.inExam;
   }
 
-  /// Check-in and authorization are identity/admission states, not evidence
-  /// that a candidate owns a physical seat. Only a candidate who has actually
-  /// entered the exam (or already submitted it) starts with a workstation
-  /// binding in the demo data.
   static bool _hasWorkstationBinding(AttendanceState state) {
     return state == AttendanceState.inExam ||
         state == AttendanceState.submitted;
@@ -109,8 +105,6 @@ class AttendanceMockService {
     switch (state) {
       case IdentityVerificationState.matched:
         return 94 + (seat % 5).toDouble();
-      case IdentityVerificationState.manualVerified:
-        return 0;
       case IdentityVerificationState.mismatch:
         return 54;
       case IdentityVerificationState.manualReview:
@@ -134,8 +128,6 @@ class AttendanceMockService {
         return 'Biometric match below threshold. Candidate requires identity review.';
       case IdentityVerificationState.manualReview:
         return 'Biometric confidence is borderline. Manual document/photo review required.';
-      case IdentityVerificationState.manualVerified:
-        return 'Identity was verified manually by an invigilator.';
       case IdentityVerificationState.matched:
         return 'Identity and biometric checks passed.';
       case IdentityVerificationState.pending:
