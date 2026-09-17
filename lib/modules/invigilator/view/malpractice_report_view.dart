@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/widgets/glass_card.dart' show GlassCardTone;
 import '../../../core/widgets/ks_status_chip.dart';
 import '../../../data/models/malpractice_models.dart';
 import '../controller/malpractice_report_controller.dart';
@@ -14,372 +13,378 @@ class MalpracticeReportView extends GetView<MalpracticeReportController> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return InvigilatorLightScaffold(
       title: 'Malpractice Report',
       actions: buildInvigilatorTopActions(showSeatMap: true),
-      maxContentWidth: 1180,
-      body: Obx(
-          () => ListView(
-            children: [
-              LightPanel(
-                tone: GlassCardTone.danger,
-                showGlow: true,
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const KsStatusChip(
-                      label: 'Incident Reporting',
-                      tone: KsStatusChipTone.danger,
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Record an examination malpractice event',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        height: 1.12,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Capture factual details, severity, and action taken for review by exam officers and management.',
-                      style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.76),
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final compact = constraints.maxWidth < 860;
+      maxContentWidth: 1240,
+      body: Obx(() {
+        return ListView(
+          children: [
+            _ReportHeader(controller: controller),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth >= 920;
+                final form = _MalpracticeForm(controller: controller);
+                final contextPanel = _ContextPanel(controller: controller);
 
-                  final contextCard = LightPanel(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Candidate / Exam Context',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        _InfoLine(
-                          label: 'Candidate',
-                          value: controller.candidateName.value.isEmpty
-                              ? '-'
-                              : controller.candidateName.value,
-                          strong: true,
-                        ),
-                        _InfoLine(
-                          label: 'Reg No',
-                          value: controller.registrationNumber.value.isEmpty
-                              ? '-'
-                              : controller.registrationNumber.value,
-                        ),
-                        _InfoLine(
-                          label: 'Hall',
-                          value: controller.hallName.value.isEmpty
-                              ? '-'
-                              : controller.hallName.value,
-                        ),
-                        _InfoLine(
-                          label: 'Seat',
-                          value: controller.seatNumber.value.isEmpty
-                              ? '-'
-                              : controller.seatNumber.value,
-                        ),
-                        _InfoLine(
-                          label: 'Workstation',
-                          value: controller.workstationId.value.isEmpty
-                              ? '-'
-                              : controller.workstationId.value,
-                        ),
-                        _InfoLine(
-                          label: 'Exam',
-                          value: controller.examTitle.value.isEmpty
-                              ? '-'
-                              : controller.examTitle.value,
-                        ),
-                      ],
-                    ),
-                  );
-
-                  final severityCard = LightPanel(
-                    tone: GlassCardTone.warning,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Type & Severity',
-                          style: TextStyle(
-                            color: cs.primary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        const Text(
-                          'Malpractice Type',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: MalpracticeType.values.map((type) {
-                            final selected =
-                                controller.selectedType.value == type;
-                            return ChoiceChip(
-                              label: Text(_typeLabel(type)),
-                              selected: selected,
-                              onSelected: (_) => controller.setType(type),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 18),
-                        const Text(
-                          'Severity',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: MalpracticeSeverity.values.map((severity) {
-                            final selected =
-                                controller.selectedSeverity.value == severity;
-                            return ChoiceChip(
-                              label: Text(_severityLabel(severity)),
-                              selected: selected,
-                              onSelected: (_) =>
-                                  controller.setSeverity(severity),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (compact) {
-                    return Column(
-                      children: [
-                        contextCard,
-                        const SizedBox(height: 16),
-                        severityCard,
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                if (!wide) {
+                  return Column(
                     children: [
-                      Expanded(child: contextCard),
-                      const SizedBox(width: 16),
-                      Expanded(child: severityCard),
+                      contextPanel,
+                      const SizedBox(height: 14),
+                      form,
                     ],
                   );
-                },
-              ),
-              const SizedBox(height: 18),
-              LightPanel(
-                padding: const EdgeInsets.all(20),
-                child: Column(
+                }
+
+                return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'What Happened?',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Describe the event clearly and objectively.',
-                      style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.70),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: controller.descriptionController,
-                      minLines: 6,
-                      maxLines: 9,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Example: Candidate was seen using a mobile phone during the examination after repeated warning from the invigilator.',
-                      ),
-                    ),
+                    Expanded(flex: 7, child: form),
+                    const SizedBox(width: 14),
+                    Expanded(flex: 3, child: contextPanel),
                   ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              LightPanel(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Action Taken',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'State the response or disciplinary step taken immediately.',
-                      style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.70),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: controller.actionTakenController,
-                      minLines: 4,
-                      maxLines: 6,
-                      decoration: const InputDecoration(
-                        hintText:
-                            'Example: Candidate was warned, script flagged, examination paused, device seized, and the case reported to the chief invigilator.',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              LightPanel(
-                tone: GlassCardTone.warning,
-                padding: const EdgeInsets.all(18),
-                child: Text(
-                  'Important: Malpractice reports must be factual, clear, professional, and free from emotional language because they may be reviewed for disciplinary decisions.',
-                  style: TextStyle(
-                    color: cs.onSurface.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w700,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                onPressed: controller.isSubmitting.value
-                    ? null
-                    : controller.submit,
-                icon: const Icon(Icons.gpp_bad_outlined),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                label: Text(
-                  controller.isSubmitting.value
-                      ? 'Submitting...'
-                      : 'Submit Malpractice Report',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-            ],
-          ),
-        ),
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            _SubmitBar(controller: controller),
+          ],
+        );
+      }),
     );
-  }
-
-  String _typeLabel(MalpracticeType type) {
-    switch (type) {
-      case MalpracticeType.impersonation:
-        return 'Impersonation';
-      case MalpracticeType.phoneUse:
-        return 'Phone Use';
-      case MalpracticeType.talking:
-        return 'Talking';
-      case MalpracticeType.unauthorizedMaterial:
-        return 'Unauthorized Material';
-      case MalpracticeType.switchingSeat:
-        return 'Switching Seat';
-      case MalpracticeType.multipleLoginAttempt:
-        return 'Multiple Login';
-      case MalpracticeType.externalAssistance:
-        return 'External Assistance';
-      case MalpracticeType.suspiciousBehavior:
-        return 'Suspicious Behavior';
-      case MalpracticeType.refusalToComply:
-        return 'Refusal to Comply';
-      case MalpracticeType.other:
-        return 'Other';
-    }
-  }
-
-  String _severityLabel(MalpracticeSeverity severity) {
-    switch (severity) {
-      case MalpracticeSeverity.moderate:
-        return 'Moderate';
-      case MalpracticeSeverity.major:
-        return 'Major';
-      case MalpracticeSeverity.severe:
-        return 'Severe';
-      case MalpracticeSeverity.critical:
-        return 'Critical';
-    }
   }
 }
 
-class _InfoLine extends StatelessWidget {
-  const _InfoLine({
-    required this.label,
-    required this.value,
-    this.strong = false,
-  });
-
-  final String label;
-  final String value;
-  final bool strong;
+class _ReportHeader extends StatelessWidget {
+  const _ReportHeader({required this.controller});
+  final MalpracticeReportController controller;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(
-            color: cs.onSurface.withValues(alpha: 0.92),
-            fontSize: 14,
-            height: 1.5,
-          ),
-          children: [
-            TextSpan(
-              text: '$label: ',
-              style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.62),
-                fontWeight: FontWeight.w700,
-              ),
+    return LightPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFFB91C1C).withValues(alpha: 0.09),
             ),
-            TextSpan(
-              text: value,
-              style: TextStyle(
-                fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
+            child: const Icon(
+              Icons.gpp_bad_outlined,
+              color: Color(0xFFB91C1C),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Record suspected examination malpractice',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Document the observation objectively. Detection evidence can support a report, but does not replace invigilator review.',
+                  style: TextStyle(
+                    color: cs.onSurface.withValues(alpha: 0.66),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (controller.isHighPriority)
+            const KsStatusChip(
+              label: 'High Priority',
+              tone: KsStatusChipTone.danger,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MalpracticeForm extends StatelessWidget {
+  const _MalpracticeForm({required this.controller});
+  final MalpracticeReportController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return LightPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Report details',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Choose the closest classification, then record what was observed and the immediate action taken.',
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.66),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text('Type', style: TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: MalpracticeType.values.map((type) {
+              return ChoiceChip(
+                label: Text(_typeLabel(type)),
+                selected: controller.selectedType.value == type,
+                onSelected: (_) => controller.setType(type),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 18),
+          const Text('Severity', style: TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: MalpracticeSeverity.values.map((severity) {
+              return ChoiceChip(
+                label: Text(_severityLabel(severity)),
+                selected: controller.selectedSeverity.value == severity,
+                onSelected: (_) => controller.setSeverity(severity),
+              );
+            }).toList(),
+          ),
+          if (controller.hasSupportingEvidence) ...[
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.18)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.sensors_outlined, color: cs.primary, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          controller.sourceEvidenceLabel.value,
+                          style: const TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 3),
+                        const Text(
+                          'Supporting detection available. Confirm the event independently before submission.',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
+          const SizedBox(height: 20),
+          TextField(
+            controller: controller.descriptionController,
+            minLines: 4,
+            maxLines: 7,
+            decoration: const InputDecoration(
+              labelText: 'What did you observe? *',
+              hintText: 'Describe the observed conduct clearly and objectively.',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: controller.actionTakenController,
+            minLines: 3,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              labelText: 'Action taken *',
+              hintText: 'Example: warned candidate, paused exam, secured device, informed chief invigilator.',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: controller.evidenceController,
+            minLines: 2,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              labelText: 'Evidence / reference (optional)',
+              hintText: 'Detection event, CCTV time, witness, device reference, or other supporting record.',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class _ContextPanel extends StatelessWidget {
+  const _ContextPanel({required this.controller});
+  final MalpracticeReportController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return LightPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.badge_outlined, color: cs.primary),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Candidate context',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _detail('Candidate', controller.candidateName.value),
+          _detail('Registration', controller.registrationNumber.value),
+          _detail('Hall / Seat', _hallSeat(controller)),
+          _detail('Workstation', controller.workstationId.value),
+          _detail('Exam', controller.examTitle.value),
+          const Divider(height: 26),
+          const Text(
+            'Important',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Use factual, professional language. Avoid conclusions about intent that were not directly observed. The report may be reviewed during disciplinary proceedings.',
+            style: TextStyle(
+              color: cs.onSurface.withValues(alpha: 0.68),
+              fontWeight: FontWeight.w600,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _hallSeat(MalpracticeReportController controller) {
+    final hall = controller.hallName.value.trim();
+    final seat = controller.seatNumber.value.trim();
+    if (hall.isEmpty && seat.isEmpty) return '-';
+    if (hall.isEmpty) return seat;
+    if (seat.isEmpty) return hall;
+    return '$hall • $seat';
+  }
+
+  Widget _detail(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value.trim().isEmpty ? '-' : value,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubmitBar extends StatelessWidget {
+  const _SubmitBar({required this.controller});
+  final MalpracticeReportController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return LightPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Observation and action taken are required. Submission creates an auditable malpractice record for review.',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.68),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          FilledButton.icon(
+            onPressed: controller.isSubmitting.value ? null : controller.submit,
+            icon: const Icon(Icons.gpp_good_outlined),
+            label: Text(
+              controller.isSubmitting.value ? 'Submitting...' : 'Submit Report',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _typeLabel(MalpracticeType type) {
+  switch (type) {
+    case MalpracticeType.impersonation:
+      return 'Impersonation';
+    case MalpracticeType.phoneUse:
+      return 'Phone Use';
+    case MalpracticeType.talking:
+      return 'Talking';
+    case MalpracticeType.unauthorizedMaterial:
+      return 'Unauthorized Material';
+    case MalpracticeType.switchingSeat:
+      return 'Seat Switching';
+    case MalpracticeType.multipleLoginAttempt:
+      return 'Multiple Login';
+    case MalpracticeType.externalAssistance:
+      return 'External Assistance';
+    case MalpracticeType.suspiciousBehavior:
+      return 'Suspicious Behaviour';
+    case MalpracticeType.refusalToComply:
+      return 'Refusal to Comply';
+    case MalpracticeType.other:
+      return 'Other';
+  }
+}
+
+String _severityLabel(MalpracticeSeverity severity) {
+  switch (severity) {
+    case MalpracticeSeverity.moderate:
+      return 'Moderate';
+    case MalpracticeSeverity.major:
+      return 'Major';
+    case MalpracticeSeverity.severe:
+      return 'Severe';
+    case MalpracticeSeverity.critical:
+      return 'Critical';
   }
 }
