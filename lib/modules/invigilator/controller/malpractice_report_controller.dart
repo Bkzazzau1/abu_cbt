@@ -7,6 +7,7 @@ import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
 import '../../../data/models/evidence_models.dart';
 import '../../../data/models/malpractice_models.dart';
+import '../../../data/services/exam_reporting_store.dart';
 import '../../../data/services/invigilator_session.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 
@@ -193,6 +194,11 @@ class MalpracticeReportController extends GetxController {
           ? Get.find<WorkstationPresenceWsService>()
           : Get.put(WorkstationPresenceWsService());
       wsService.sendMalpracticeReport(report.toJson());
+
+      final reportingStore = Get.isRegistered<ExamReportingStore>()
+          ? Get.find<ExamReportingStore>()
+          : Get.put(ExamReportingStore(), permanent: true);
+      reportingStore.addMalpractice(report);
 
       Get.snackbar(
         'Malpractice Report Recorded',
