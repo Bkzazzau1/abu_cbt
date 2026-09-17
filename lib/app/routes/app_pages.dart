@@ -20,6 +20,7 @@ import '../../modules/invigilator/controller/invigilator_dashboard_controller.da
 import '../../modules/invigilator/controller/invigilator_login_controller.dart';
 import '../../modules/invigilator/controller/malpractice_report_controller.dart';
 import '../../modules/invigilator/controller/seat_map_controller.dart';
+import '../../modules/invigilator/controller/technical_reports_controller.dart';
 import '../../modules/invigilator/view/attendance_register_view.dart';
 import '../../modules/invigilator/view/candidate_action_panel_view.dart';
 import '../../modules/invigilator/view/candidate_checkin_view.dart';
@@ -27,9 +28,9 @@ import '../../modules/invigilator/view/exam_session_dashboard_view.dart';
 import '../../modules/invigilator/view/hall_monitoring_view.dart';
 import '../../modules/invigilator/view/incident_report_view.dart';
 import '../../modules/invigilator/view/invigilator_dashboard_view.dart';
-
 import '../../modules/invigilator/view/malpractice_report_view.dart';
 import '../../modules/invigilator/view/seat_map_view.dart';
+import '../../modules/invigilator/view/technical_reports_view.dart';
 import '../../modules/portal/controller/center_exam_portal_controller.dart';
 
 import '../../modules/workstation/controller/device_blocked_controller.dart';
@@ -203,6 +204,16 @@ class AppPages {
       page: () => const SeatMapView(),
       binding: BindingsBuilder(() {
         Get.lazyPut<SeatMapController>(() => SeatMapController());
+      }),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
+      name: Routes.technicalReports,
+      page: () => const TechnicalReportsView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<TechnicalReportsController>(
+          () => TechnicalReportsController(),
+        );
       }),
     ),
     GetPage(
