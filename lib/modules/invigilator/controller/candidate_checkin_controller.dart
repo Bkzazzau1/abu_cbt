@@ -134,38 +134,26 @@ class CandidateCheckInController extends GetxController {
   void confirmSeat() {
     final current = record.value;
     if (current == null || current.status == CandidateCheckInStatus.pending) {
-      Get.snackbar(
-        'Check-In Required',
-        'Record the candidate arrival before verifying the assigned seat.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _checkInRequired('assigned seat');
       return;
     }
-    record.value = current.copyWith(seatVerified: true);
+    _applyVerificationProgress(current.copyWith(seatVerified: true));
   }
 
   void confirmExam() {
     final current = record.value;
     if (current == null || current.status == CandidateCheckInStatus.pending) {
-      Get.snackbar(
-        'Check-In Required',
-        'Record the candidate arrival before verifying the assigned exam.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _checkInRequired('assigned exam');
       return;
     }
-    record.value = current.copyWith(examVerified: true);
+    _applyVerificationProgress(current.copyWith(examVerified: true));
   }
 
   void runIdentityVerification() {
     final current = record.value;
     if (current == null) return;
     if (current.status == CandidateCheckInStatus.pending) {
-      Get.snackbar(
-        'Check-In Required',
-        'Record the candidate arrival before running identity verification.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _checkInRequired('identity verification');
       return;
     }
 
@@ -190,19 +178,11 @@ class CandidateCheckInController extends GetxController {
       biometricConfidence: current.biometricConfidence > 0
           ? current.biometricConfidence
           : 96,
-      status: CandidateCheckInStatus.verified,
       note: notesController.text.trim().isEmpty
           ? 'Identity and biometric checks passed.'
           : notesController.text.trim(),
     );
-    record.value = updated;
-    _attendanceStore.setVerification(
-      registrationNumber: updated.registrationNumber,
-      identityState: IdentityVerificationState.matched,
-      biometricConfidence: updated.biometricConfidence,
-      note: updated.note,
-      state: AttendanceState.verified,
-    );
+    _applyVerificationProgress(updated);
     Get.snackbar(
       'Identity Verified',
       'Biometric identity check passed.',
@@ -225,21 +205,32 @@ class CandidateCheckInController extends GetxController {
 
     final updated = current.copyWith(
       identityState: IdentityVerificationState.matched,
-      status: CandidateCheckInStatus.verified,
       note: notesController.text.trim(),
     );
-    record.value = updated;
-    _attendanceStore.setVerification(
-      registrationNumber: updated.registrationNumber,
-      identityState: IdentityVerificationState.matched,
-      biometricConfidence: updated.biometricConfidence,
-      note: updated.note,
-      state: AttendanceState.verified,
-    );
+    _applyVerificationProgress(updated);
     Get.snackbar(
       'Manual Review Approved',
-      'Identity review recorded and candidate marked verified.',
+      'Identity review recorded. Complete any remaining verification checks.',
       snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  void _applyVerificationProgress(CandidateCheckInRecord candidate) {
+    final fullyVerified = candidate.identityVerified &&
+        candidate.seatVerified &&
+        candidate.examVerified;
+    final nextStatus = fullyVerified
+        ? CandidateCheckInStatus.verified
+        : CandidateCheckInStatus.checkedIn;
+    final updated = candidate.copyWith(status: nextStatus);
+    record.value = updated;
+
+    _attendanceStore.setVerification(
+      registrationNumber: updated.registrationNumber,
+      identityState: updated.identityState,
+      biometricConfidence: updated.biometricConfidence,
+      note: updated.note,
+      state: fullyVerified ? AttendanceState.verified : AttendanceState.checkedIn,
     );
   }
 
@@ -330,6 +321,14 @@ class CandidateCheckInController extends GetxController {
     Get.snackbar(
       'Check-In Attention',
       message ?? 'Candidate check-in issue has been flagged.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  void _checkInRequired(String step) {
+    Get.snackbar(
+      'Check-In Required',
+      'Record the candidate arrival before completing $step.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
