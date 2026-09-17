@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../../demo/abu_demo_theme.dart';
 
-/// Shared light-theme page shell for invigilator sub-screens (Hall
-/// Monitoring, Attendance, Seat Map, Session Dashboard, etc.) — a simple
-/// back-navigable page (Flutter's `AppBar` supplies the back arrow
-/// automatically once there's a route to pop) with the same white/abuCanvas
-/// look as the main invigilator dashboard, but without repeating its full
-/// logo header on every sub-page. Self-themed like the dashboard, so it
-/// looks right regardless of the app's separate dark global theme.
 class InvigilatorLightScaffold extends StatelessWidget {
   const InvigilatorLightScaffold({
     super.key,
@@ -23,15 +18,26 @@ class InvigilatorLightScaffold extends StatelessWidget {
   final List<Widget> actions;
   final double maxContentWidth;
 
+  static const _primaryWorkspaceRoutes = <String>{
+    Routes.examSessionDashboard,
+    Routes.attendanceRegister,
+    Routes.hallMonitoring,
+    Routes.seatMap,
+    Routes.technicalReports,
+  };
+
   @override
   Widget build(BuildContext context) {
     return Theme(data: abuDemoTheme(), child: Builder(builder: _buildScaffold));
   }
 
   Widget _buildScaffold(BuildContext context) {
+    final isPrimaryWorkspace = _primaryWorkspaceRoutes.contains(Get.currentRoute);
+
     return Scaffold(
       backgroundColor: abuCanvas,
       appBar: AppBar(
+        automaticallyImplyLeading: !isPrimaryWorkspace,
         backgroundColor: Colors.white,
         foregroundColor: abuInk,
         elevation: 0,
