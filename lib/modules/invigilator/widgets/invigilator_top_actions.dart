@@ -9,6 +9,7 @@ List<Widget> buildInvigilatorTopActions({
   bool showAttendance = true,
   bool showLiveHall = true,
   bool showSeatMap = false,
+  bool showTechnical = true,
   bool showLogout = true,
 }) {
   final actions = <Widget>[];
@@ -49,6 +50,16 @@ List<Widget> buildInvigilatorTopActions({
         onPressed: () => Get.toNamed(Routes.seatMap),
         icon: const Icon(Icons.grid_view_outlined),
         label: const Text('Seat Map'),
+      ),
+    );
+  }
+
+  if (showTechnical) {
+    actions.add(
+      TextButton.icon(
+        onPressed: () => Get.toNamed(Routes.technicalReports),
+        icon: const Icon(Icons.build_circle_outlined),
+        label: const Text('Technical'),
       ),
     );
   }
