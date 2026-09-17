@@ -22,6 +22,7 @@ abstract class Routes {
 
   static const attendanceRegister = '/attendance-register';
   static const seatMap = '/seat-map';
+  static const workstationAllocation = '/workstation-allocation';
   static const technicalReports = '/technical-reports';
 
   static const examSessionDashboard = '/exam-session-dashboard';
