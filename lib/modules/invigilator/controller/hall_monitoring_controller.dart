@@ -16,6 +16,7 @@ class HallMonitoringController extends GetxController {
   final searchController = TextEditingController();
 
   late final InvigilatorDemoStore _demoStore;
+  Worker? _seatStoreWorker;
 
   @override
   void onInit() {
@@ -23,6 +24,10 @@ class HallMonitoringController extends GetxController {
     _demoStore = Get.isRegistered<InvigilatorDemoStore>()
         ? Get.find<InvigilatorDemoStore>()
         : Get.put(InvigilatorDemoStore(), permanent: true);
+    _seatStoreWorker = ever<List<SeatMapRecord>>(
+      _demoStore.seats,
+      (_) => _refreshFromSharedSeats(),
+    );
     load();
   }
 
@@ -174,6 +179,24 @@ class HallMonitoringController extends GetxController {
     );
   }
 
+  void _refreshFromSharedSeats() {
+    if (records.isEmpty) return;
+    final refreshed = records.map(_syncWithSharedSeat).toList();
+    records.assignAll(refreshed);
+
+    final current = selectedRecord.value;
+    if (current != null) {
+      final index = refreshed.indexWhere(
+        (item) => item.workstationId == current.workstationId,
+      );
+      if (index >= 0) {
+        selectedRecord.value = refreshed[index];
+      } else {
+        _keepSelectionVisible();
+      }
+    }
+  }
+
   HallCandidateLiveState _stateFromSeat(
     SeatMapRecord seat, {
     required HallCandidateLiveState fallback,
@@ -247,6 +270,7 @@ class HallMonitoringController extends GetxController {
 
   @override
   void onClose() {
+    _seatStoreWorker?.dispose();
     searchController.dispose();
     super.onClose();
   }
