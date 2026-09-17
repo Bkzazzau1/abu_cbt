@@ -39,17 +39,21 @@ class AttendanceMockService {
       final name = _candidateNames[(offset + index) % _candidateNames.length];
       final arrival = _arrivalForState(state, seat);
       final confidence = _confidenceFor(identity, seat);
+      final hasWorkstationBinding = _hasWorkstationBinding(state);
 
       return AttendanceRecord(
         candidateName: name,
         registrationNumber:
             '$registrationPrefix/${(offset + seat).toString().padLeft(3, '0')}',
         hallName: hallName,
-        seatNumber: '$seatPrefix-${seat.toString().padLeft(2, '0')}',
+        seatNumber: hasWorkstationBinding
+            ? '$seatPrefix-${seat.toString().padLeft(2, '0')}'
+            : '',
         examTitle: examTitle,
         state: state,
-        workstationId:
-            '$workstationPrefix${seat.toString().padLeft(2, '0')}-WS',
+        workstationId: hasWorkstationBinding
+            ? '$workstationPrefix${seat.toString().padLeft(2, '0')}-WS'
+            : '',
         identityState: identity,
         biometricConfidence: confidence,
         arrivalTimeLabel: arrival,
@@ -71,6 +75,10 @@ class AttendanceMockService {
       return AttendanceState.submitted;
     }
     return AttendanceState.inExam;
+  }
+
+  static bool _hasWorkstationBinding(AttendanceState state) {
+    return state != AttendanceState.expected && state != AttendanceState.absent;
   }
 
   static IdentityVerificationState _identityForSeat(
