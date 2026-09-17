@@ -103,9 +103,10 @@ class CandidateCheckInController extends GetxController {
       case AttendanceState.verified:
         return CandidateCheckInStatus.verified;
       case AttendanceState.authorized:
+        return CandidateCheckInStatus.authorized;
       case AttendanceState.inExam:
       case AttendanceState.submitted:
-        return CandidateCheckInStatus.authorized;
+        return CandidateCheckInStatus.inExam;
       case AttendanceState.absent:
         return CandidateCheckInStatus.absent;
       case AttendanceState.issueFlagged:
@@ -132,19 +133,41 @@ class CandidateCheckInController extends GetxController {
 
   void confirmSeat() {
     final current = record.value;
-    if (current == null) return;
+    if (current == null || current.status == CandidateCheckInStatus.pending) {
+      Get.snackbar(
+        'Check-In Required',
+        'Record the candidate arrival before verifying the assigned seat.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
     record.value = current.copyWith(seatVerified: true);
   }
 
   void confirmExam() {
     final current = record.value;
-    if (current == null) return;
+    if (current == null || current.status == CandidateCheckInStatus.pending) {
+      Get.snackbar(
+        'Check-In Required',
+        'Record the candidate arrival before verifying the assigned exam.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
     record.value = current.copyWith(examVerified: true);
   }
 
   void runIdentityVerification() {
     final current = record.value;
     if (current == null) return;
+    if (current.status == CandidateCheckInStatus.pending) {
+      Get.snackbar(
+        'Check-In Required',
+        'Record the candidate arrival before running identity verification.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
 
     if (current.identityState == IdentityVerificationState.mismatch) {
       flagIssue(
@@ -213,6 +236,11 @@ class CandidateCheckInController extends GetxController {
       note: updated.note,
       state: AttendanceState.verified,
     );
+    Get.snackbar(
+      'Manual Review Approved',
+      'Identity review recorded and candidate marked verified.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   void authorize() {
@@ -240,6 +268,32 @@ class CandidateCheckInController extends GetxController {
     );
   }
 
+  void markInExam() {
+    final current = record.value;
+    if (current == null) return;
+    if (current.status != CandidateCheckInStatus.authorized &&
+        current.status != CandidateCheckInStatus.inExam) {
+      Get.snackbar(
+        'Authorization Required',
+        'Authorize the candidate before marking them as in exam.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    final updated = current.copyWith(
+      status: CandidateCheckInStatus.inExam,
+      note: notesController.text.trim(),
+    );
+    record.value = updated;
+    _updateAttendance(updated, AttendanceState.inExam);
+    Get.snackbar(
+      'Candidate In Exam',
+      'Candidate admission is complete and the exam is now active.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
   void markAbsent() {
     final current = record.value;
     if (current == null) return;
@@ -249,6 +303,11 @@ class CandidateCheckInController extends GetxController {
     );
     record.value = updated;
     _updateAttendance(updated, AttendanceState.absent);
+    Get.snackbar(
+      'Marked Absent',
+      'Candidate has been marked absent for this session.',
+      snackPosition: SnackPosition.BOTTOM,
+    );
   }
 
   void flagIssue({String? message}) {
