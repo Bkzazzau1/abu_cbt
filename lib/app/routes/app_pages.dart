@@ -19,6 +19,7 @@ import '../../modules/invigilator/controller/incident_report_controller.dart';
 import '../../modules/invigilator/controller/invigilator_dashboard_controller.dart';
 import '../../modules/invigilator/controller/invigilator_login_controller.dart';
 import '../../modules/invigilator/controller/malpractice_report_controller.dart';
+import '../../modules/invigilator/controller/manual_identity_review_controller.dart';
 import '../../modules/invigilator/controller/seat_map_controller.dart';
 import '../../modules/invigilator/controller/technical_reports_controller.dart';
 import '../../modules/invigilator/controller/workstation_allocation_controller.dart';
@@ -30,6 +31,7 @@ import '../../modules/invigilator/view/hall_monitoring_view.dart';
 import '../../modules/invigilator/view/incident_report_view.dart';
 import '../../modules/invigilator/view/invigilator_dashboard_view.dart';
 import '../../modules/invigilator/view/malpractice_report_view.dart';
+import '../../modules/invigilator/view/manual_identity_review_view.dart';
 import '../../modules/invigilator/view/seat_map_view.dart';
 import '../../modules/invigilator/view/technical_reports_view.dart';
 import '../../modules/invigilator/view/workstation_allocation_view.dart';
@@ -197,6 +199,16 @@ class AppPages {
       binding: BindingsBuilder(() {
         Get.lazyPut<AttendanceRegisterController>(
           () => AttendanceRegisterController(),
+        );
+      }),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
+      name: Routes.manualIdentityReview,
+      page: () => const ManualIdentityReviewView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ManualIdentityReviewController>(
+          () => ManualIdentityReviewController(),
         );
       }),
     ),
