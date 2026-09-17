@@ -10,6 +10,7 @@ class AttendanceDemoStore extends GetxService {
   bool _loaded = false;
   late final InvigilatorDemoStore _invigilatorStore;
   Worker? _seatReassignmentWorker;
+  Worker? _workstationAssignmentWorker;
 
   @override
   void onInit() {
@@ -22,6 +23,10 @@ class AttendanceDemoStore extends GetxService {
       _invigilatorStore.seatReassignments,
       (_) => _syncSeatReassignments(),
     );
+    _workstationAssignmentWorker = ever(
+      _invigilatorStore.workstationAssignments,
+      (_) => _syncWorkstationAssignments(),
+    );
   }
 
   Future<void> ensureLoaded() async {
@@ -31,6 +36,7 @@ class AttendanceDemoStore extends GetxService {
     }
 
     await _invigilatorStore.ensureLoaded();
+    _syncWorkstationAssignments();
     _syncSeatReassignments();
   }
 
@@ -75,6 +81,35 @@ class AttendanceDemoStore extends GetxService {
     );
   }
 
+  void _syncWorkstationAssignments() {
+    if (!_loaded) return;
+    var changed = false;
+
+    for (var index = 0; index < records.length; index++) {
+      final current = records[index];
+      final assignment = _invigilatorStore.assignmentForCandidate(
+        registrationNumber: current.registrationNumber,
+        examTitle: current.examTitle,
+      );
+      if (assignment == null) continue;
+
+      if (current.hallName == assignment.hallName &&
+          current.seatNumber == assignment.seatNumber &&
+          current.workstationId == assignment.workstationId) {
+        continue;
+      }
+
+      records[index] = current.copyWith(
+        hallName: assignment.hallName,
+        seatNumber: assignment.seatNumber,
+        workstationId: assignment.workstationId,
+      );
+      changed = true;
+    }
+
+    if (changed) records.refresh();
+  }
+
   void _syncSeatReassignments() {
     if (!_loaded || _invigilatorStore.seatReassignments.isEmpty) return;
 
@@ -109,6 +144,7 @@ class AttendanceDemoStore extends GetxService {
   @override
   void onClose() {
     _seatReassignmentWorker?.dispose();
+    _workstationAssignmentWorker?.dispose();
     super.onClose();
   }
 }
