@@ -44,8 +44,7 @@ class CandidateCheckInRecord {
   final bool examVerified;
 
   bool get identityVerified =>
-      identityState == IdentityVerificationState.matched ||
-      identityState == IdentityVerificationState.manualVerified;
+      identityState == IdentityVerificationState.matched;
   bool get hasWorkstationAssignment =>
       seatNumber.trim().isNotEmpty && workstationId.trim().isNotEmpty;
   bool get canAuthorize => identityVerified && examVerified;
