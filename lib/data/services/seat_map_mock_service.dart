@@ -36,7 +36,7 @@ class SeatMapMockService {
       final seatIndex = index + 1;
       final seatNumber = '$seatPrefix-${seatIndex.toString().padLeft(2, '0')}';
       final state = _stateForSeat(seatIndex);
-      final hasCandidate = state != SeatOccupancyState.empty;
+      final hasCandidate = _stateHasActiveBinding(state);
       final nameIndex = (offset + index) % _candidateNames.length;
 
       return SeatMapRecord(
@@ -54,15 +54,22 @@ class SeatMapMockService {
     });
   }
 
+  /// The hall map represents physical workstation occupancy, not a permanent
+  /// student-to-seat timetable. Expected and absent candidates therefore do
+  /// not consume a seat. A reservation is added dynamically by the
+  /// workstation assignment engine when Manual/System allocation is used.
   static SeatOccupancyState _stateForSeat(int seat) {
     if (seat == 7 || seat == 34) return SeatOccupancyState.issue;
     if (seat == 19) return SeatOccupancyState.malpractice;
-    if (seat == 11 || seat == 42) return SeatOccupancyState.absent;
-    if (seat == 15 || seat == 31 || seat == 46) {
+    if (seat == 4 ||
+        seat == 11 ||
+        seat == 15 ||
+        seat == 22 ||
+        seat == 31 ||
+        seat == 39 ||
+        seat == 42 ||
+        seat == 46) {
       return SeatOccupancyState.empty;
-    }
-    if (seat == 4 || seat == 22 || seat == 39) {
-      return SeatOccupancyState.expected;
     }
     if (seat == 2 || seat == 28) return SeatOccupancyState.seated;
     if (seat == 5 || seat == 26) return SeatOccupancyState.authorized;
@@ -70,6 +77,15 @@ class SeatMapMockService {
       return SeatOccupancyState.submitted;
     }
     return SeatOccupancyState.inExam;
+  }
+
+  static bool _stateHasActiveBinding(SeatOccupancyState state) {
+    return switch (state) {
+      SeatOccupancyState.empty ||
+      SeatOccupancyState.expected ||
+      SeatOccupancyState.absent => false,
+      _ => true,
+    };
   }
 
   static const _candidateNames = <String>[
