@@ -54,37 +54,44 @@ class SeatMapMockService {
     });
   }
 
-  /// The hall map represents physical workstation occupancy, not a permanent
-  /// student-to-seat timetable. Expected and absent candidates therefore do
-  /// not consume a seat. A reservation is added dynamically by the
-  /// workstation assignment engine when Manual/System allocation is used.
+  /// This map represents physical workstations, not permanent student seats.
+  /// Pre-login states therefore remain available until Manual/System allocation
+  /// creates a reservation or Free Seating creates a lock at login.
   static SeatOccupancyState _stateForSeat(int seat) {
     if (seat == 7 || seat == 34) return SeatOccupancyState.issue;
     if (seat == 19) return SeatOccupancyState.malpractice;
-    if (seat == 4 ||
+    if (seat == 13 || seat == 24 || seat == 37 || seat == 45) {
+      return SeatOccupancyState.submitted;
+    }
+
+    // These candidates may be expected, checked in, verified, authorized or
+    // absent in Attendance, but none of those states permanently occupies a
+    // physical workstation.
+    if (seat == 2 ||
+        seat == 4 ||
+        seat == 5 ||
         seat == 11 ||
         seat == 15 ||
         seat == 22 ||
+        seat == 26 ||
+        seat == 28 ||
         seat == 31 ||
         seat == 39 ||
         seat == 42 ||
         seat == 46) {
       return SeatOccupancyState.empty;
     }
-    if (seat == 2 || seat == 28) return SeatOccupancyState.seated;
-    if (seat == 5 || seat == 26) return SeatOccupancyState.authorized;
-    if (seat == 13 || seat == 24 || seat == 37 || seat == 45) {
-      return SeatOccupancyState.submitted;
-    }
+
     return SeatOccupancyState.inExam;
   }
 
   static bool _stateHasActiveBinding(SeatOccupancyState state) {
     return switch (state) {
-      SeatOccupancyState.empty ||
-      SeatOccupancyState.expected ||
-      SeatOccupancyState.absent => false,
-      _ => true,
+      SeatOccupancyState.inExam ||
+      SeatOccupancyState.submitted ||
+      SeatOccupancyState.issue ||
+      SeatOccupancyState.malpractice => true,
+      _ => false,
     };
   }
 
