@@ -6,6 +6,7 @@ import '../../../data/models/checkin_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/incident_models.dart';
 import '../../../data/models/invigilator_models.dart';
+import '../../../data/services/exam_reporting_store.dart';
 import '../../../data/services/invigilator_session.dart';
 
 class IncidentReportController extends GetxController {
@@ -142,6 +143,11 @@ class IncidentReportController extends GetxController {
       );
 
       await Future.delayed(const Duration(milliseconds: 350));
+
+      final reportingStore = Get.isRegistered<ExamReportingStore>()
+          ? Get.find<ExamReportingStore>()
+          : Get.put(ExamReportingStore(), permanent: true);
+      reportingStore.addIncident(report);
 
       Get.snackbar(
         'Incident Recorded',
