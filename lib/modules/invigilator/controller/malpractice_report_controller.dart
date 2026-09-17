@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../data/models/candidate_action_models.dart';
 import '../../../data/models/checkin_models.dart';
 import '../../../data/models/hall_monitor_models.dart';
 import '../../../data/models/invigilator_models.dart';
@@ -40,6 +41,16 @@ class MalpracticeReportController extends GetxController {
   }
 
   void _readContext(dynamic arg) {
+    if (arg is CandidateActionContext) {
+      candidateName.value = arg.candidateName;
+      registrationNumber.value = arg.registrationNumber;
+      workstationId.value = arg.workstationId;
+      hallName.value = arg.hallName;
+      seatNumber.value = arg.seatNumber;
+      examTitle.value = arg.examTitle;
+      return;
+    }
+
     if (arg is InvigilatorWorkstationRecord) {
       candidateName.value = arg.candidateName;
       registrationNumber.value = arg.registrationNumber;
