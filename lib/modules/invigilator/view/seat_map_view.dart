@@ -115,31 +115,20 @@ class SeatMapView extends GetView<SeatMapController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Live Hall Layout',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Compact workstation view. Select a seat to inspect the candidate and workstation.',
-                              style: TextStyle(
-                                color: cs.onSurface.withValues(alpha: 0.68),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Live Hall Layout',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Compact workstation view. Select a seat to inspect the candidate and workstation.',
+                    style: TextStyle(
+                      color: cs.onSurface.withValues(alpha: 0.68),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Wrap(
@@ -271,7 +260,7 @@ class SeatMapView extends GetView<SeatMapController> {
           title: Row(
             children: [
               Container(
-                width: 42,
+                width: 48,
                 height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
@@ -333,10 +322,7 @@ class SeatMapView extends GetView<SeatMapController> {
                   label: 'Exam',
                   value: record.examTitle.isEmpty ? '—' : record.examTitle,
                 ),
-                _DetailRow(
-                  label: 'Workstation',
-                  value: record.workstationId,
-                ),
+                _DetailRow(label: 'Workstation', value: record.workstationId),
               ],
             ),
           ),
@@ -349,37 +335,9 @@ class SeatMapView extends GetView<SeatMapController> {
               FilledButton.icon(
                 onPressed: () {
                   Navigator.of(dialogContext).pop();
-                  final hallRecord = HallMonitorRecord(
-                    workstationId: record.workstationId,
-                    hallName: record.hallName,
-                    seatNumber: record.seatNumber,
-                    candidateName: record.candidateName,
-                    registrationNumber: record.registrationNumber,
-                    examTitle: record.examTitle,
-                    state: switch (record.state) {
-                      SeatOccupancyState.empty => HallCandidateLiveState.ready,
-                      SeatOccupancyState.expected => HallCandidateLiveState.ready,
-                      SeatOccupancyState.seated =>
-                        HallCandidateLiveState.checkedIn,
-                      SeatOccupancyState.authorized =>
-                        HallCandidateLiveState.authorized,
-                      SeatOccupancyState.inExam => HallCandidateLiveState.inExam,
-                      SeatOccupancyState.submitted =>
-                        HallCandidateLiveState.submitted,
-                      SeatOccupancyState.absent => HallCandidateLiveState.absent,
-                      SeatOccupancyState.issue =>
-                        HallCandidateLiveState.issueFlagged,
-                      SeatOccupancyState.malpractice =>
-                        HallCandidateLiveState.malpracticeFlagged,
-                    },
-                    lastSeenLabel: 'Just now',
-                    hasIncident: record.state == SeatOccupancyState.issue,
-                    hasMalpractice:
-                        record.state == SeatOccupancyState.malpractice,
-                  );
                   Get.toNamed(
                     Routes.candidateActionPanel,
-                    arguments: hallRecord,
+                    arguments: _toHallRecord(record),
                   );
                 },
                 icon: const Icon(Icons.tune_outlined),
@@ -388,6 +346,32 @@ class SeatMapView extends GetView<SeatMapController> {
           ],
         );
       },
+    );
+  }
+
+  HallMonitorRecord _toHallRecord(SeatMapRecord record) {
+    return HallMonitorRecord(
+      workstationId: record.workstationId,
+      hallName: record.hallName,
+      seatNumber: record.seatNumber,
+      candidateName: record.candidateName,
+      registrationNumber: record.registrationNumber,
+      examTitle: record.examTitle,
+      state: switch (record.state) {
+        SeatOccupancyState.empty => HallCandidateLiveState.ready,
+        SeatOccupancyState.expected => HallCandidateLiveState.ready,
+        SeatOccupancyState.seated => HallCandidateLiveState.checkedIn,
+        SeatOccupancyState.authorized => HallCandidateLiveState.authorized,
+        SeatOccupancyState.inExam => HallCandidateLiveState.inExam,
+        SeatOccupancyState.submitted => HallCandidateLiveState.submitted,
+        SeatOccupancyState.absent => HallCandidateLiveState.absent,
+        SeatOccupancyState.issue => HallCandidateLiveState.issueFlagged,
+        SeatOccupancyState.malpractice =>
+          HallCandidateLiveState.malpracticeFlagged,
+      },
+      lastSeenLabel: 'Just now',
+      hasIncident: record.state == SeatOccupancyState.issue,
+      hasMalpractice: record.state == SeatOccupancyState.malpractice,
     );
   }
 }
@@ -402,7 +386,8 @@ class _HallGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <List<SeatMapRecord>>[];
     for (var index = 0; index < seats.length; index += 8) {
-      rows.add(seats.sublist(index, (index + 8).clamp(0, seats.length)));
+      final end = index + 8 > seats.length ? seats.length : index + 8;
+      rows.add(seats.sublist(index, end));
     }
 
     return SingleChildScrollView(
@@ -499,7 +484,6 @@ class _SummaryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
@@ -535,7 +519,6 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
@@ -552,10 +535,7 @@ class _DetailRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
+            child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),
