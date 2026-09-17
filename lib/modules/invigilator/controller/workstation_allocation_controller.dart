@@ -110,7 +110,23 @@ class WorkstationAllocationController extends GetxController {
   }
 
   void changeMode(WorkstationAssignmentMode mode) {
+    if (mode == selectedMode.value) return;
+
+    // Locked sessions survive a policy change; only pre-login reservations are
+    // released when moving to Free Seating so candidates truly become free to
+    // choose any healthy workstation.
+    if (mode == WorkstationAssignmentMode.freeSeating && reservedCount > 0) {
+      _clearCurrentReservations();
+      Get.snackbar(
+        'Reservations released',
+        'Pre-login workstation reservations were cleared. Existing logged-in locks were preserved.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+
     selectedMode.value = mode;
+    selectedCandidateRegistration.value = '';
+    selectedSeatNumber.value = '';
     _savePolicy();
   }
 
@@ -194,6 +210,25 @@ class WorkstationAllocationController extends GetxController {
         )
         .toList();
 
+    // The store intentionally replaces existing pre-login reservations during
+    // a System Distribution run. Preflight capacity first so a failed run can
+    // never clear a previously valid seating plan.
+    final lockedRegistrations = currentAssignments
+        .where((assignment) => assignment.isLocked)
+        .map((assignment) => assignment.registrationNumber.trim().toUpperCase())
+        .toSet();
+    final candidatesNeedingReservation = requests.where(
+      (request) =>
+          !lockedRegistrations.contains(request.registrationNumber.trim().toUpperCase()),
+    ).length;
+    final effectiveCapacity = availableWorkstations.length + reservedCount;
+    if (effectiveCapacity < candidatesNeedingReservation) {
+      _showError(
+        'Only $effectiveCapacity workstations can be allocated for $candidatesNeedingReservation candidates. Existing reservations were left unchanged.',
+      );
+      return;
+    }
+
     isProcessing.value = true;
     try {
       final created = await _invigilatorStore.distributeCandidates(
@@ -212,6 +247,42 @@ class WorkstationAllocationController extends GetxController {
     } finally {
       isProcessing.value = false;
     }
+  }
+
+  void _clearCurrentReservations() {
+    final reservations = currentAssignments
+        .where((assignment) => assignment.isReserved)
+        .toList();
+
+    for (final assignment in reservations) {
+      final assignmentIndex = _invigilatorStore.workstationAssignments
+          .indexWhere((item) => item.id == assignment.id);
+      if (assignmentIndex >= 0) {
+        _invigilatorStore.workstationAssignments[assignmentIndex] =
+            assignment.copyWith(status: WorkstationAssignmentStatus.released);
+      }
+
+      final seatIndex = _invigilatorStore.seats.indexWhere(
+        (seat) =>
+            seat.hallName == assignment.hallName &&
+            seat.seatNumber == assignment.seatNumber,
+      );
+      if (seatIndex < 0) continue;
+      final seat = _invigilatorStore.seats[seatIndex];
+      if (seat.state == SeatOccupancyState.expected &&
+          seat.registrationNumber.trim().toUpperCase() ==
+              assignment.registrationNumber.trim().toUpperCase()) {
+        _invigilatorStore.seats[seatIndex] = seat.copyWith(
+          candidateName: '',
+          registrationNumber: '',
+          examTitle: '',
+          state: SeatOccupancyState.empty,
+        );
+      }
+    }
+
+    _invigilatorStore.workstationAssignments.refresh();
+    _invigilatorStore.seats.refresh();
   }
 
   void _loadCurrentPolicy() {
