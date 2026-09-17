@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../data/models/hall_monitor_models.dart';
+import '../../../data/models/seat_map_models.dart';
 import '../../../data/services/hall_monitor_mock_service.dart';
+import '../../../data/services/invigilator_demo_store.dart';
 
 class HallMonitoringController extends GetxController {
   final isLoading = false.obs;
@@ -13,16 +15,23 @@ class HallMonitoringController extends GetxController {
   final selectedRecord = Rxn<HallMonitorRecord>();
   final searchController = TextEditingController();
 
+  late final InvigilatorDemoStore _demoStore;
+
   @override
   void onInit() {
     super.onInit();
+    _demoStore = Get.isRegistered<InvigilatorDemoStore>()
+        ? Get.find<InvigilatorDemoStore>()
+        : Get.put(InvigilatorDemoStore(), permanent: true);
     load();
   }
 
   Future<void> load() async {
     isLoading.value = true;
     try {
-      final items = await HallMonitorMockService.loadHallRecords();
+      await _demoStore.ensureLoaded();
+      final mockItems = await HallMonitorMockService.loadHallRecords();
+      final items = mockItems.map(_syncWithSharedSeat).toList();
       records.assignAll(items);
       selectedRecord.value = items.isEmpty ? null : items.first;
     } finally {
@@ -146,6 +155,50 @@ class HallMonitoringController extends GetxController {
 
   void markSubmitted(HallMonitorRecord record) {
     _replace(record.copyWith(state: HallCandidateLiveState.submitted));
+  }
+
+  HallMonitorRecord _syncWithSharedSeat(HallMonitorRecord record) {
+    final seat = _demoStore.findSeat(record.hallName, record.seatNumber);
+    if (seat == null) return record;
+
+    return record.copyWith(
+      workstationId: seat.workstationId,
+      candidateName: seat.candidateName,
+      registrationNumber: seat.registrationNumber,
+      examTitle: seat.examTitle,
+      state: _stateFromSeat(seat, fallback: record.state),
+      hasIncident:
+          record.hasIncident || seat.state == SeatOccupancyState.issue,
+      hasMalpractice:
+          record.hasMalpractice || seat.state == SeatOccupancyState.malpractice,
+    );
+  }
+
+  HallCandidateLiveState _stateFromSeat(
+    SeatMapRecord seat, {
+    required HallCandidateLiveState fallback,
+  }) {
+    switch (seat.state) {
+      case SeatOccupancyState.empty:
+        return HallCandidateLiveState.ready;
+      case SeatOccupancyState.expected:
+      case SeatOccupancyState.seated:
+        return HallCandidateLiveState.checkedIn;
+      case SeatOccupancyState.authorized:
+        return HallCandidateLiveState.authorized;
+      case SeatOccupancyState.inExam:
+        return fallback == HallCandidateLiveState.offline
+            ? HallCandidateLiveState.offline
+            : HallCandidateLiveState.inExam;
+      case SeatOccupancyState.submitted:
+        return HallCandidateLiveState.submitted;
+      case SeatOccupancyState.absent:
+        return HallCandidateLiveState.absent;
+      case SeatOccupancyState.issue:
+        return HallCandidateLiveState.issueFlagged;
+      case SeatOccupancyState.malpractice:
+        return HallCandidateLiveState.malpracticeFlagged;
+    }
   }
 
   bool _matchesState(HallCandidateLiveState state, String filter) {
