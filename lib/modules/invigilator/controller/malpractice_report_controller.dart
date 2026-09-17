@@ -21,16 +21,25 @@ class MalpracticeReportController extends GetxController {
   final selectedType = MalpracticeType.suspiciousBehavior.obs;
   final selectedSeverity = MalpracticeSeverity.major.obs;
   final isSubmitting = false.obs;
+  final sourceEvidenceLabel = ''.obs;
 
   final descriptionController = TextEditingController();
   final actionTakenController = TextEditingController();
+  final evidenceController = TextEditingController();
+
+  bool get isHighPriority =>
+      selectedSeverity.value == MalpracticeSeverity.severe ||
+      selectedSeverity.value == MalpracticeSeverity.critical;
+
+  bool get hasSupportingEvidence => sourceEvidenceLabel.value.isNotEmpty;
 
   @override
   void onInit() {
     super.onInit();
+    _readContext(Get.arguments);
+  }
 
-    final arg = Get.arguments;
-
+  void _readContext(dynamic arg) {
     if (arg is InvigilatorWorkstationRecord) {
       candidateName.value = arg.candidateName;
       registrationNumber.value = arg.registrationNumber;
@@ -72,14 +81,14 @@ class MalpracticeReportController extends GetxController {
       examTitle.value = arg.examTitle;
       selectedType.value = _defaultTypeFor(arg.evidenceType);
       selectedSeverity.value = MalpracticeSeverity.major;
+
       final confidenceText = arg.confidence != null
-          ? ' (${(arg.confidence! * 100).round()}% model confidence)'
-          : '';
-      descriptionController.text =
-          'Local detector flagged: ${arg.details.isEmpty ? _evidenceTypeLabel(arg.evidenceType) : arg.details}'
-          '$confidenceText at ${arg.detectedAtIso}. Officer review required '
-          '— confirm and record what was actually observed.';
-      return;
+          ? '${(arg.confidence! * 100).round()}% confidence'
+          : 'confidence unavailable';
+      sourceEvidenceLabel.value = 'Local detection • $confidenceText';
+      evidenceController.text =
+          '${arg.details.isEmpty ? _evidenceTypeLabel(arg.evidenceType) : arg.details}. '
+          'Detected at ${arg.detectedAtIso}. This is supporting evidence only and requires invigilator review.';
     }
   }
 
@@ -101,15 +110,15 @@ class MalpracticeReportController extends GetxController {
   String _evidenceTypeLabel(String evidenceType) {
     switch (evidenceType) {
       case EvidenceType.phone:
-        return 'possible phone';
+        return 'Possible phone detected';
       case EvidenceType.identity:
-        return 'identity mismatch';
+        return 'Possible identity mismatch detected';
       case EvidenceType.talking:
-        return 'elevated talking';
+        return 'Elevated talking detected';
       case EvidenceType.usb:
-        return 'unauthorized USB device';
+        return 'Unauthorized USB event detected';
       default:
-        return 'detection event';
+        return 'Detection event';
     }
   }
 
@@ -126,11 +135,12 @@ class MalpracticeReportController extends GetxController {
 
     final description = descriptionController.text.trim();
     final actionTaken = actionTakenController.text.trim();
+    final evidenceNote = evidenceController.text.trim();
 
     if (description.isEmpty) {
       Get.snackbar(
-        'Missing description',
-        'Please describe the malpractice incident.',
+        'Observation required',
+        'Record what the invigilator actually observed before submitting.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -138,8 +148,8 @@ class MalpracticeReportController extends GetxController {
 
     if (actionTaken.isEmpty) {
       Get.snackbar(
-        'Missing action',
-        'Please state the action taken by the invigilator.',
+        'Action required',
+        'Record the immediate action taken by the invigilator.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -147,7 +157,9 @@ class MalpracticeReportController extends GetxController {
 
     isSubmitting.value = true;
     try {
+      final now = DateTime.now();
       final report = MalpracticeReportModel(
+        id: 'MAL-${now.millisecondsSinceEpoch}',
         workstationId: workstationId.value,
         centerName: centerName.value.isEmpty ? 'ABU' : centerName.value,
         hallName: hallName.value,
@@ -159,8 +171,11 @@ class MalpracticeReportController extends GetxController {
         severity: selectedSeverity.value,
         description: description,
         actionTaken: actionTaken,
-        reportedBy: InvigilatorSession.currentName,
-        reportedAtIso: DateTime.now().toIso8601String(),
+        evidenceNote: evidenceNote,
+        reportedBy: InvigilatorSession.currentName.isEmpty
+            ? 'Invigilator'
+            : InvigilatorSession.currentName,
+        reportedAtIso: now.toIso8601String(),
       );
 
       final wsService = Get.isRegistered<WorkstationPresenceWsService>()
@@ -169,8 +184,8 @@ class MalpracticeReportController extends GetxController {
       wsService.sendMalpracticeReport(report.toJson());
 
       Get.snackbar(
-        'Malpractice Report Submitted',
-        'Malpractice report logged successfully (${report.type.name}).',
+        'Malpractice Report Recorded',
+        '${report.id} submitted for review.',
         snackPosition: SnackPosition.BOTTOM,
       );
 
@@ -184,6 +199,7 @@ class MalpracticeReportController extends GetxController {
   void onClose() {
     descriptionController.dispose();
     actionTakenController.dispose();
+    evidenceController.dispose();
     super.onClose();
   }
 }
