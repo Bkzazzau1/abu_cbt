@@ -14,6 +14,7 @@ import '../../modules/invigilator/controller/attendance_register_controller.dart
 import '../../modules/invigilator/controller/candidate_action_panel_controller.dart';
 import '../../modules/invigilator/controller/candidate_checkin_controller.dart';
 import '../../modules/invigilator/controller/exam_session_dashboard_controller.dart';
+import '../../modules/invigilator/controller/general_exam_report_controller.dart';
 import '../../modules/invigilator/controller/hall_monitoring_controller.dart';
 import '../../modules/invigilator/controller/incident_report_controller.dart';
 import '../../modules/invigilator/controller/invigilator_dashboard_controller.dart';
@@ -27,6 +28,7 @@ import '../../modules/invigilator/view/attendance_register_view.dart';
 import '../../modules/invigilator/view/candidate_action_panel_view.dart';
 import '../../modules/invigilator/view/candidate_checkin_view.dart';
 import '../../modules/invigilator/view/exam_session_dashboard_view.dart';
+import '../../modules/invigilator/view/general_exam_report_view.dart';
 import '../../modules/invigilator/view/hall_monitoring_view.dart';
 import '../../modules/invigilator/view/incident_report_view.dart';
 import '../../modules/invigilator/view/invigilator_dashboard_view.dart';
@@ -199,6 +201,16 @@ class AppPages {
       binding: BindingsBuilder(() {
         Get.lazyPut<AttendanceRegisterController>(
           () => AttendanceRegisterController(),
+        );
+      }),
+    ),
+    GetPage(
+      middlewares: [DemoRouteGuard()],
+      name: Routes.generalExamReport,
+      page: () => const GeneralExamReportView(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<GeneralExamReportController>(
+          () => GeneralExamReportController(),
         );
       }),
     ),
