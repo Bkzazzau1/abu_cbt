@@ -65,7 +65,12 @@ class AttendanceMockService {
   static AttendanceState _stateForSeat(int seat) {
     if (seat == 19 || seat == 34) return AttendanceState.issueFlagged;
     if (seat == 11 || seat == 42) return AttendanceState.absent;
-    if (seat == 4 || seat == 22 || seat == 39) {
+    if (seat == 4 ||
+        seat == 15 ||
+        seat == 22 ||
+        seat == 31 ||
+        seat == 39 ||
+        seat == 46) {
       return AttendanceState.expected;
     }
     if (seat == 2 || seat == 28) return AttendanceState.checkedIn;
