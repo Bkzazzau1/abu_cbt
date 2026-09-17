@@ -19,6 +19,8 @@ class InvigilatorDashboardController extends GetxController {
   final records = <InvigilatorWorkstationRecord>[].obs;
   final liveFeedConnected = false.obs;
 
+  /// Newest first. Bounded display only — the backend already bounds what
+  /// it retains (see MAX_EVIDENCE_EVENTS in the heartbeat service).
   final evidenceEvents = <EvidenceEvent>[].obs;
   final malpracticeReports = <MalpracticeReportModel>[].obs;
 
@@ -45,12 +47,15 @@ class InvigilatorDashboardController extends GetxController {
     try {
       final items = await InvigilatorMockService.loadWorkstations();
       records.assignAll(items);
-
+      // Demo/presentation seed data so the evidence and malpractice-report
+      // sections have realistic content without needing a live detection or
+      // a filed report first. Ids are prefixed `DEMO-` so a live backend's
+      // snapshot (see `_applyPresenceEnvelope`) merges real data in
+      // alongside these rather than wiping them.
       final demoEvidence = await EvidenceMockService.loadEvidenceEvents();
       for (final event in demoEvidence) {
         _upsertEvidenceEvent(event);
       }
-
       final demoReports = await MalpracticeMockService.loadReports();
       for (final report in demoReports) {
         _upsertMalpracticeReport(report);
@@ -100,6 +105,10 @@ class InvigilatorDashboardController extends GetxController {
     }).toList()..sort(_byRiskDescending);
   }
 
+  /// Highest-risk flagged candidates, most urgent first — the "check these
+  /// first" list so an invigilator isn't scanning a flat grid to find them.
+  /// A check-in/workstation mismatch, an AI-flagged answer similarity, or a
+  /// filed malpractice report is treated as urgent as a submission risk flag.
   List<InvigilatorWorkstationRecord> get priorityQueue {
     final flagged = records.where(_isUrgent).toList()..sort(_byRiskDescending);
     return flagged.take(5).toList();
@@ -208,9 +217,14 @@ class InvigilatorDashboardController extends GetxController {
   }
 
   void markSubmitted(InvigilatorWorkstationRecord record) {
-    _replaceRecord(record.copyWith(usageState: WorkstationUsageState.submitted));
+    _replaceRecord(
+      record.copyWith(usageState: WorkstationUsageState.submitted),
+    );
   }
 
+  /// Marks a candidate paused for this invigilator's own tracking. This is
+  /// a dashboard-local marker only (see [InvigilatorWorkstationRecord.isPaused])
+  /// — it does not freeze the candidate's running exam screen.
   void pauseCandidate(InvigilatorWorkstationRecord record) {
     _replaceRecord(record.copyWith(isPaused: true));
     Get.snackbar(
@@ -231,11 +245,16 @@ class InvigilatorDashboardController extends GetxController {
     );
   }
 
+  /// Malpractice reports filed against this specific workstation, so a
+  /// candidate's own card can show them inline instead of only in the
+  /// separate reports feed.
   List<MalpracticeReportModel> malpracticeReportsFor(String workstationId) =>
       malpracticeReports
           .where((report) => report.workstationId == workstationId)
           .toList();
 
+  /// Pauses every candidate currently visible under [hallName] (dashboard-
+  /// local marker only — see [pauseCandidate]).
   void pauseHall(String hallName) {
     final targets = records.where((r) => r.hallName == hallName).toList();
     for (final record in targets) {
@@ -260,6 +279,8 @@ class InvigilatorDashboardController extends GetxController {
     );
   }
 
+  /// Sends a real termination command (see [terminateExam]) to every
+  /// currently-connected workstation with a candidate in [hallName].
   void terminateHall(String hallName, {required String reason}) {
     final targets = records
         .where((r) => r.hallName == hallName && r.candidateName.isNotEmpty)
@@ -304,6 +325,10 @@ class InvigilatorDashboardController extends GetxController {
         }
         break;
       case 'evidenceSnapshot':
+        // Keep demo-seeded entries (see `load()`) rather than wiping them —
+        // a live backend's snapshot merges alongside the demo data instead
+        // of replacing it, so a presentation keeps its illustrative content
+        // even once real detections start arriving.
         final demoEvidence = evidenceEvents
             .where((e) => e.id.startsWith('DEMO-'))
             .toList();
@@ -354,6 +379,8 @@ class InvigilatorDashboardController extends GetxController {
     malpracticeReports.refresh();
   }
 
+  /// Hands an evidence event to the exam officer for further review,
+  /// on top of it already being visible to every invigilator.
   void escalateEvidenceEvent(EvidenceEvent event) {
     _presenceService.sendEscalateEvidenceEvent(
       eventId: event.id,
@@ -381,6 +408,11 @@ class InvigilatorDashboardController extends GetxController {
     );
   }
 
+  /// Ends a specific candidate's exam immediately. Only takes effect if
+  /// that workstation is currently connected — there is no queued/offline
+  /// delivery, so a confirmation is shown by the caller (the view) before
+  /// this is invoked, since it can't be undone once the candidate's app
+  /// acts on it.
   void terminateExam({
     required String workstationId,
     required String seatLabel,
@@ -392,42 +424,53 @@ class InvigilatorDashboardController extends GetxController {
       issuedBy: _actorName,
     );
     Get.snackbar(
-      'Termination Sent',
-      'Exam termination command sent to $seatLabel.',
+      'Termination command sent',
+      'Told $seatLabel\'s workstation to end the exam now.',
       snackPosition: SnackPosition.BOTTOM,
     );
   }
 
-  void _upsertFromPresence(WorkstationPresenceModel item) {
+  String get _actorName =>
+      InvigilatorSession.currentName.isEmpty
+      ? 'invigilator'
+      : InvigilatorSession.currentName;
+
+  void _upsertFromPresence(WorkstationPresenceRecord update) {
+    if (update.workstationId.trim().isEmpty) return;
+
     final index = records.indexWhere(
-      (record) => record.workstationId == item.workstationId,
+      (e) => e.workstationId == update.workstationId,
     );
 
     if (index >= 0) {
       final current = records[index];
       records[index] = current.copyWith(
-        hallName: item.hallName,
-        seatNumber: item.seatNumber,
-        status: item.status,
-        usageState: item.usageState,
-        appInstalled: item.appInstalled,
-        candidateName: item.candidateName,
-        registrationNumber: item.registrationNumber,
-        examTitle: item.examTitle,
-        lastSeenLabel: item.lastSeenLabel,
-        riskFlagged: item.riskFlagged,
-        isNewWorkstation: item.isNewWorkstation,
-        clientIpAddress: item.clientIpAddress,
-        expectedHallIpRange: item.expectedHallIpRange,
-        ipInExpectedRange: item.ipInExpectedRange,
-        riskReasons: item.riskReasons,
-        workstationApproved: item.workstationApproved,
-        riskScore: item.riskScore,
-        riskLevel: item.riskLevel,
-        checkInMismatch: item.checkInMismatch,
-        checkInMismatchReason: item.checkInMismatchReason,
-        similarityFlagged: item.similarityFlagged,
-        similarityReason: item.similarityReason,
+        centerName: update.centerName.isEmpty
+            ? current.centerName
+            : update.centerName,
+        hallName: update.hallName.isEmpty ? current.hallName : update.hallName,
+        seatNumber: update.seatNumber.isEmpty
+            ? current.seatNumber
+            : update.seatNumber,
+        status: update.workstationStatus,
+        usageState: update.usageState,
+        candidateName: update.candidateName,
+        registrationNumber: update.registrationNumber,
+        examTitle: update.examTitle,
+        lastSeenLabel: _lastSeenLabel(update.eventAtIso),
+        riskFlagged: update.riskFlagged,
+        isNewWorkstation: update.isNewWorkstation,
+        clientIpAddress: update.clientIpAddress,
+        expectedHallIpRange: update.expectedHallIpRange,
+        ipInExpectedRange: update.ipInExpectedRange,
+        riskReasons: update.riskReasons,
+        workstationApproved: update.workstationApproved,
+        riskScore: update.riskScore,
+        riskLevel: update.riskLevel,
+        checkInMismatch: update.checkInMismatch,
+        checkInMismatchReason: update.checkInMismatchReason,
+        similarityFlagged: update.similarityFlagged,
+        similarityReason: update.similarityReason,
       );
       records.refresh();
       return;
@@ -435,50 +478,51 @@ class InvigilatorDashboardController extends GetxController {
 
     records.add(
       InvigilatorWorkstationRecord(
-        workstationId: item.workstationId,
-        centerName: item.centerName,
-        hallName: item.hallName,
-        seatNumber: item.seatNumber,
-        status: item.status,
-        usageState: item.usageState,
-        appInstalled: item.appInstalled,
-        candidateName: item.candidateName,
-        registrationNumber: item.registrationNumber,
-        examTitle: item.examTitle,
-        lastSeenLabel: item.lastSeenLabel,
-        riskFlagged: item.riskFlagged,
-        isNewWorkstation: item.isNewWorkstation,
-        clientIpAddress: item.clientIpAddress,
-        expectedHallIpRange: item.expectedHallIpRange,
-        ipInExpectedRange: item.ipInExpectedRange,
-        riskReasons: item.riskReasons,
-        workstationApproved: item.workstationApproved,
-        riskScore: item.riskScore,
-        riskLevel: item.riskLevel,
-        checkInMismatch: item.checkInMismatch,
-        checkInMismatchReason: item.checkInMismatchReason,
-        similarityFlagged: item.similarityFlagged,
-        similarityReason: item.similarityReason,
+        workstationId: update.workstationId,
+        centerName: update.centerName.isEmpty ? 'ABU' : update.centerName,
+        hallName: update.hallName.isEmpty ? 'Unknown Hall' : update.hallName,
+        seatNumber: update.seatNumber.isEmpty ? '-' : update.seatNumber,
+        status: update.workstationStatus,
+        usageState: update.usageState,
+        appInstalled: true,
+        candidateName: update.candidateName,
+        registrationNumber: update.registrationNumber,
+        examTitle: update.examTitle,
+        lastSeenLabel: _lastSeenLabel(update.eventAtIso),
+        riskFlagged: update.riskFlagged,
+        isNewWorkstation: update.isNewWorkstation,
+        clientIpAddress: update.clientIpAddress,
+        expectedHallIpRange: update.expectedHallIpRange,
+        ipInExpectedRange: update.ipInExpectedRange,
+        riskReasons: update.riskReasons,
+        workstationApproved: update.workstationApproved,
+        riskScore: update.riskScore,
+        riskLevel: update.riskLevel,
+        checkInMismatch: update.checkInMismatch,
+        checkInMismatchReason: update.checkInMismatchReason,
+        similarityFlagged: update.similarityFlagged,
+        similarityReason: update.similarityReason,
       ),
     );
     records.refresh();
   }
 
-  String get _actorName {
-    final session = Get.isRegistered<InvigilatorSession>()
-        ? Get.find<InvigilatorSession>()
-        : Get.put(InvigilatorSession(), permanent: true);
-    return session.displayName.trim().isEmpty
-        ? 'Invigilator'
-        : session.displayName.trim();
+  String _lastSeenLabel(String eventAtIso) {
+    final dt = DateTime.tryParse(eventAtIso)?.toLocal();
+    if (dt == null) return 'Just now';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inSeconds < 50) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    return '${diff.inDays} day ago';
   }
 
   @override
   void onClose() {
-    searchController.dispose();
     _presenceSub?.cancel();
     _connectionSub?.cancel();
     _presenceService.disconnect();
+    searchController.dispose();
     super.onClose();
   }
 }
