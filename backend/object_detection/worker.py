@@ -32,7 +32,7 @@ import time
 class DetectionGate:
     """Require two consecutive samples; rate-limit continuing detections."""
 
-    def __init__(self, threshold=0.65, cooldown=30.0):
+    def __init__(self, threshold=0.5, cooldown=30.0):
         self.threshold = threshold
         self.cooldown = cooldown
         self.hits = 0
@@ -299,8 +299,15 @@ def run(args, emit, stop, start_stdin_watcher):
             last_sample = captured_at
             frame_time = datetime.now(timezone.utc) - timedelta(
                 seconds=max(0, time.monotonic() - captured_at))
+            # A low net here only widens what the model reports at all; the
+            # actual alert-worthy bar is DetectionGate.threshold below. A
+            # nano model's raw confidence for "cell phone" — a small,
+            # reflective, easily-angled object — commonly lands well under
+            # 0.65 in ordinary hall lighting, so filtering this tightly at
+            # the model call was silently discarding real detections before
+            # the gate ever saw them.
             results = model.predict(frame, device="cpu", classes=phone_ids,
-                                    conf=0.65, imgsz=640, verbose=False, save=False)
+                                    conf=0.35, imgsz=640, verbose=False, save=False)
             boxes = results[0].boxes
             confidence = max((float(value) for value in boxes.conf), default=0.0)
             emit({"kind": "status", "status": "active"})

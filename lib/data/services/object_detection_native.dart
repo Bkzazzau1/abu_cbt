@@ -131,13 +131,15 @@ class ObjectDetectionService {
             _lastMessage = DateTime.now();
             _onStatus?.call('Active');
           } else if (event['kind'] == 'phone') {
+            // The worker's own DetectionGate already applies the
+            // alert-worthy confidence threshold before ever emitting a
+            // "phone" event — duplicating that number here just risks the
+            // two drifting apart (as they did: this used to hardcode 0.65
+            // independently of the worker's own threshold).
             final confidence = (event['confidence'] as num).toDouble();
             final timestamp = DateTime.parse(
               event['capturedAtIso'] as String,
             ).toUtc();
-            if (!confidence.isFinite || confidence < 0.65 || confidence > 1) {
-              return;
-            }
             _onFlag(
               'Possible phone detected at ${timestamp.toIso8601String()} '
               '(${(confidence * 100).round()}% model confidence). Officer review required.',

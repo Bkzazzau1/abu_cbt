@@ -1,11 +1,17 @@
 # Local object detection, identity snapshot and voice-activity checks
 
 Python runs YOLO11 nano on CPU, filtering its COCO `cell phone` class. OpenCV
-holds only the newest camera frame; inference samples every three seconds. Two
-consecutive samples at confidence >= 0.65 trigger a **possible phone** flag;
-continued detections are limited to one flag every 30 seconds. These are initial
-settings requiring validation in the actual hall, not measured accuracy claims.
-Phones out of view, concealed objects and poor lighting may be missed.
+holds only the newest camera frame; inference samples every second. The model
+itself is only asked to discard detections below 0.35 confidence — a broad net,
+since a nano model's raw confidence for a small, reflective, easily-angled
+object like a phone commonly lands well under 0.65 in ordinary hall lighting.
+Two consecutive samples at confidence >= 0.5 (`DetectionGate.threshold`) then
+trigger a **possible phone** flag; continued detections are limited to one flag
+every 30 seconds. These are initial settings requiring validation in the actual
+hall, not measured accuracy claims. Phones out of view, concealed objects and
+poor lighting may still be missed — this threshold is the only place it's
+enforced, so recalibrate here (not in Flutter, which trusts this worker's own
+gate rather than re-checking a confidence number of its own).
 
 Flutter starts/stops the worker with the exam and shows camera status. It sends
 timestamped flags through the existing Rust heartbeat backend to invigilator

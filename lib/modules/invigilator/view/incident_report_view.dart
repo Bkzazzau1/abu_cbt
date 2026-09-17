@@ -17,42 +17,40 @@ class IncidentReportView extends GetView<IncidentReportController> {
       title: 'Incident Report',
       actions: buildInvigilatorTopActions(showSeatMap: true),
       maxContentWidth: 1240,
-      body: Obx(() {
-        return ListView(
-          children: [
-            _ReportHeader(controller: controller),
-            const SizedBox(height: 14),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth >= 920;
-                final form = _IncidentForm(controller: controller);
-                final contextPanel = _ContextPanel(controller: controller);
+      body: ListView(
+        children: [
+          _ReportHeader(controller: controller),
+          const SizedBox(height: 14),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 920;
+              final form = _IncidentForm(controller: controller);
+              final contextPanel = _ContextPanel(controller: controller);
 
-                if (!wide) {
-                  return Column(
-                    children: [
-                      contextPanel,
-                      const SizedBox(height: 14),
-                      form,
-                    ],
-                  );
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              if (!wide) {
+                return Column(
                   children: [
-                    Expanded(flex: 7, child: form),
-                    const SizedBox(width: 14),
-                    Expanded(flex: 3, child: contextPanel),
+                    contextPanel,
+                    const SizedBox(height: 14),
+                    form,
                   ],
                 );
-              },
-            ),
-            const SizedBox(height: 14),
-            _SubmitBar(controller: controller),
-          ],
-        );
-      }),
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 7, child: form),
+                  const SizedBox(width: 14),
+                  Expanded(flex: 3, child: contextPanel),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 14),
+          _SubmitBar(controller: controller),
+        ],
+      ),
     );
   }
 }
@@ -97,11 +95,14 @@ class _ReportHeader extends StatelessWidget {
               ],
             ),
           ),
-          if (controller.isHighPriority)
-            const KsStatusChip(
-              label: 'Priority Incident',
-              tone: KsStatusChipTone.warning,
-            ),
+          Obx(
+            () => controller.isHighPriority
+                ? const KsStatusChip(
+                    label: 'Priority Incident',
+                    tone: KsStatusChipTone.warning,
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
@@ -134,30 +135,34 @@ class _IncidentForm extends StatelessWidget {
           const SizedBox(height: 18),
           const Text('Category', style: TextStyle(fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: IncidentType.values.map((type) {
-              return ChoiceChip(
-                label: Text(_incidentTypeLabel(type)),
-                selected: controller.selectedType.value == type,
-                onSelected: (_) => controller.setType(type),
-              );
-            }).toList(),
+          Obx(
+            () => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: IncidentType.values.map((type) {
+                return ChoiceChip(
+                  label: Text(_incidentTypeLabel(type)),
+                  selected: controller.selectedType.value == type,
+                  onSelected: (_) => controller.setType(type),
+                );
+              }).toList(),
+            ),
           ),
           const SizedBox(height: 18),
           const Text('Severity', style: TextStyle(fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: IncidentSeverity.values.map((severity) {
-              return ChoiceChip(
-                label: Text(_severityLabel(severity)),
-                selected: controller.selectedSeverity.value == severity,
-                onSelected: (_) => controller.setSeverity(severity),
-              );
-            }).toList(),
+          Obx(
+            () => Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: IncidentSeverity.values.map((severity) {
+                return ChoiceChip(
+                  label: Text(_severityLabel(severity)),
+                  selected: controller.selectedSeverity.value == severity,
+                  onSelected: (_) => controller.setSeverity(severity),
+                );
+              }).toList(),
+            ),
           ),
           const SizedBox(height: 20),
           TextField(
@@ -208,48 +213,50 @@ class _ContextPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return LightPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.person_pin_outlined, color: cs.primary),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Candidate context',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+    return Obx(
+      () => LightPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.person_pin_outlined, color: cs.primary),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Candidate context',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                  ),
                 ),
-              ),
-              if (!controller.hasCandidateContext)
-                const KsStatusChip(
-                  label: 'General',
-                  tone: KsStatusChipTone.neutral,
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _detail('Candidate', controller.candidateName.value),
-          _detail('Registration', controller.registrationNumber.value),
-          _detail('Hall / Seat', _hallSeat(controller)),
-          _detail('Workstation', controller.workstationId.value),
-          _detail('Exam', controller.examTitle.value),
-          const Divider(height: 26),
-          const Text(
-            'Reporting rule',
-            style: TextStyle(fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Record facts, not assumptions. Malpractice allegations should be filed using the dedicated Malpractice Report.',
-            style: TextStyle(
-              color: cs.onSurface.withValues(alpha: 0.68),
-              fontWeight: FontWeight.w600,
-              height: 1.4,
+                if (!controller.hasCandidateContext)
+                  const KsStatusChip(
+                    label: 'General',
+                    tone: KsStatusChipTone.neutral,
+                  ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            _detail('Candidate', controller.candidateName.value),
+            _detail('Registration', controller.registrationNumber.value),
+            _detail('Hall / Seat', _hallSeat(controller)),
+            _detail('Workstation', controller.workstationId.value),
+            _detail('Exam', controller.examTitle.value),
+            const Divider(height: 26),
+            const Text(
+              'Reporting rule',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Record facts, not assumptions. Malpractice allegations should be filed using the dedicated Malpractice Report.',
+              style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.68),
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -291,28 +298,30 @@ class _SubmitBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return LightPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Submitting creates an auditable incident record. Description and action taken are required.',
-              style: TextStyle(
-                color: cs.onSurface.withValues(alpha: 0.68),
-                fontWeight: FontWeight.w600,
+    return Obx(
+      () => LightPanel(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Submitting creates an auditable incident record. Description and action taken are required.',
+                style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.68),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 14),
-          FilledButton.icon(
-            onPressed: controller.isSubmitting.value ? null : controller.submit,
-            icon: const Icon(Icons.check_circle_outline),
-            label: Text(
-              controller.isSubmitting.value ? 'Saving...' : 'Record Incident',
+            const SizedBox(width: 14),
+            FilledButton.icon(
+              onPressed: controller.isSubmitting.value ? null : controller.submit,
+              icon: const Icon(Icons.check_circle_outline),
+              label: Text(
+                controller.isSubmitting.value ? 'Saving...' : 'Record Incident',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

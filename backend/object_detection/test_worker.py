@@ -22,7 +22,7 @@ class DetectionTests(unittest.TestCase):
         self.assertTrue(gate.update(0.9, 39))
 
     def test_low_confidence_and_non_finite_values_never_flag(self):
-        for confidence in [0, 0.64, float('nan'), float('inf'), 1.1]:
+        for confidence in [0, 0.49, float('nan'), float('inf'), 1.1]:
             gate = DetectionGate()
             self.assertFalse(gate.update(confidence, 0))
             self.assertFalse(gate.update(confidence, 100))
