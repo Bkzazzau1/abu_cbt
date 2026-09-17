@@ -98,8 +98,10 @@ class ManualIdentityReviewController extends GetxController {
     if (current == null || !current.isPending) return;
     final note = reviewNoteController.text.trim();
     if (note.isEmpty) {
-      _message('Review note required',
-          'Record how the candidate identity was manually confirmed.');
+      _message(
+        'Review note required',
+        'Record how the candidate identity was manually confirmed.',
+      );
       return;
     }
 
@@ -117,17 +119,24 @@ class ManualIdentityReviewController extends GetxController {
       final attendance =
           _attendanceStore.findByRegistration(approved.registrationNumber);
       if (attendance != null) {
-        _attendanceStore.setVerification(
-          registrationNumber: attendance.registrationNumber,
-          identityState: IdentityVerificationState.manualVerified,
-          biometricConfidence: 0,
-          note:
-              'Manual identity verification approved by $reviewer. ${approved.reviewNote}',
+        _attendanceStore.updateRecord(
+          attendance.copyWith(
+            identityState: IdentityVerificationState.matched,
+            biometricConfidence: attendance.biometricConfidence,
+            verificationNote:
+                'Manual identity verification approved by $reviewer. ${approved.reviewNote}',
+            manualIdentityVerified: true,
+            manualVerifiedBy: reviewer,
+            manualVerificationAuditId: approved.id,
+            manualVerifiedAt: approved.reviewedAt ?? DateTime.now(),
+          ),
         );
       }
 
-      _message('Manual verification approved',
-          '${approved.candidateName} may continue. Audit ID: ${approved.id}');
+      _message(
+        'Manual verification approved',
+        '${approved.candidateName} may continue. Audit ID: ${approved.id}',
+      );
     } on StateError catch (error) {
       _message('Identity review', error.message.toString());
     } finally {
@@ -141,8 +150,10 @@ class ManualIdentityReviewController extends GetxController {
     if (current == null || !current.isPending) return;
     final note = reviewNoteController.text.trim();
     if (note.isEmpty) {
-      _message('Rejection note required',
-          'Record why the candidate identity could not be confirmed.');
+      _message(
+        'Rejection note required',
+        'Record why the candidate identity could not be confirmed.',
+      );
       return;
     }
 
@@ -160,18 +171,24 @@ class ManualIdentityReviewController extends GetxController {
       final attendance =
           _attendanceStore.findByRegistration(rejected.registrationNumber);
       if (attendance != null) {
-        _attendanceStore.setVerification(
-          registrationNumber: attendance.registrationNumber,
-          identityState: IdentityVerificationState.mismatch,
-          biometricConfidence: attendance.biometricConfidence,
-          note:
-              'Manual identity verification rejected by $reviewer. ${rejected.reviewNote}',
-          state: AttendanceState.issueFlagged,
+        _attendanceStore.updateRecord(
+          attendance.copyWith(
+            identityState: IdentityVerificationState.mismatch,
+            state: AttendanceState.issueFlagged,
+            verificationNote:
+                'Manual identity verification rejected by $reviewer. ${rejected.reviewNote}',
+            manualIdentityVerified: false,
+            manualVerifiedBy: reviewer,
+            manualVerificationAuditId: rejected.id,
+            manualVerifiedAt: rejected.reviewedAt ?? DateTime.now(),
+          ),
         );
       }
 
-      _message('Identity review rejected',
-          '${rejected.candidateName} remains blocked from the examination.');
+      _message(
+        'Identity review rejected',
+        '${rejected.candidateName} remains blocked from the examination.',
+      );
     } on StateError catch (error) {
       _message('Identity review', error.message.toString());
     } finally {
