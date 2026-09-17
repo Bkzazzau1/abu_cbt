@@ -4,79 +4,122 @@ class SeatMapMockService {
   static Future<List<SeatMapRecord>> loadSeatMap() async {
     await Future.delayed(const Duration(milliseconds: 350));
 
-    return <SeatMapRecord>[
-      SeatMapRecord(
+    return [
+      ..._buildHall(
         hallName: 'Hall A',
-        seatNumber: 'A-01',
-        candidateName: 'Zainab Musa',
-        registrationNumber: 'ABU/CSC/001',
+        seatPrefix: 'A',
         examTitle: 'CSC 305 - Data Structures',
-        workstationId: 'ABU-CBT-A12F-93KD-7M21',
-        state: SeatOccupancyState.inExam,
+        registrationPrefix: 'ABU/CSC',
+        workstationPrefix: 'ABU-CBT-A',
+        offset: 0,
       ),
-      SeatMapRecord(
-        hallName: 'Hall A',
-        seatNumber: 'A-02',
-        candidateName: 'Ibrahim Bashir Yahaya',
-        registrationNumber: 'ABU/MTH/004',
-        examTitle: 'MTH 202 - Linear Algebra',
-        workstationId: 'ABU-CBT-B74L-18QX-4N22',
-        state: SeatOccupancyState.seated,
-      ),
-      SeatMapRecord(
-        hallName: 'Hall A',
-        seatNumber: 'A-03',
-        candidateName: 'Maryam Bello',
-        registrationNumber: 'ABU/GST/011',
+      ..._buildHall(
+        hallName: 'Hall B',
+        seatPrefix: 'B',
         examTitle: 'GST 201 - Use of English',
-        workstationId: 'ABU-CBT-C99P-55LM-2T77',
-        state: SeatOccupancyState.submitted,
-      ),
-      SeatMapRecord(
-        hallName: 'Hall A',
-        seatNumber: 'A-04',
-        candidateName: 'Sadiq Lawal',
-        registrationNumber: 'ABU/CSC/008',
-        examTitle: 'CSC 305 - Data Structures',
-        workstationId: 'ABU-CBT-D43R-29HJ-8W10',
-        state: SeatOccupancyState.issue,
-      ),
-      SeatMapRecord(
-        hallName: 'Hall B',
-        seatNumber: 'B-01',
-        candidateName: 'Fatima Musa',
-        registrationNumber: 'ABU/BIO/002',
-        examTitle: 'BIO 201 - Genetics',
-        workstationId: 'ABU-CBT-E18X-64BV-5K31',
-        state: SeatOccupancyState.malpractice,
-      ),
-      SeatMapRecord(
-        hallName: 'Hall B',
-        seatNumber: 'B-02',
-        candidateName: 'Umar Aliyu',
-        registrationNumber: 'ABU/CHM/007',
-        examTitle: 'CHM 204 - Organic Chemistry',
-        workstationId: 'ABU-CBT-F22M-87ZT-9P44',
-        state: SeatOccupancyState.absent,
-      ),
-      SeatMapRecord(
-        hallName: 'Hall B',
-        seatNumber: 'B-03',
-        candidateName: '',
-        registrationNumber: '',
-        examTitle: '',
-        workstationId: 'ABU-CBT-G88M-22QR-4N18',
-        state: SeatOccupancyState.empty,
-      ),
-      SeatMapRecord(
-        hallName: 'Hall B',
-        seatNumber: 'B-04',
-        candidateName: 'Aisha Bello',
-        registrationNumber: 'ABU/PHY/003',
-        examTitle: 'PHY 210 - Mechanics',
-        workstationId: 'ABU-CBT-H10P-11TS-7Q20',
-        state: SeatOccupancyState.expected,
+        registrationPrefix: 'ABU/GST',
+        workstationPrefix: 'ABU-CBT-B',
+        offset: 48,
       ),
     ];
   }
+
+  static List<SeatMapRecord> _buildHall({
+    required String hallName,
+    required String seatPrefix,
+    required String examTitle,
+    required String registrationPrefix,
+    required String workstationPrefix,
+    required int offset,
+  }) {
+    return List.generate(48, (index) {
+      final seatIndex = index + 1;
+      final seatNumber = '$seatPrefix-${seatIndex.toString().padLeft(2, '0')}';
+      final state = _stateForSeat(seatIndex);
+      final hasCandidate = state != SeatOccupancyState.empty;
+      final nameIndex = (offset + index) % _candidateNames.length;
+
+      return SeatMapRecord(
+        hallName: hallName,
+        seatNumber: seatNumber,
+        candidateName: hasCandidate ? _candidateNames[nameIndex] : '',
+        registrationNumber: hasCandidate
+            ? '$registrationPrefix/${(offset + seatIndex).toString().padLeft(3, '0')}'
+            : '',
+        examTitle: hasCandidate ? examTitle : '',
+        workstationId:
+            '$workstationPrefix${seatIndex.toString().padLeft(2, '0')}-WS',
+        state: state,
+      );
+    });
+  }
+
+  static SeatOccupancyState _stateForSeat(int seat) {
+    if (seat == 7 || seat == 34) return SeatOccupancyState.issue;
+    if (seat == 19) return SeatOccupancyState.malpractice;
+    if (seat == 11 || seat == 42) return SeatOccupancyState.absent;
+    if (seat == 15 || seat == 31 || seat == 46) {
+      return SeatOccupancyState.empty;
+    }
+    if (seat == 4 || seat == 22 || seat == 39) {
+      return SeatOccupancyState.expected;
+    }
+    if (seat == 2 || seat == 28) return SeatOccupancyState.seated;
+    if (seat == 5 || seat == 26) return SeatOccupancyState.authorized;
+    if (seat == 13 || seat == 24 || seat == 37 || seat == 45) {
+      return SeatOccupancyState.submitted;
+    }
+    return SeatOccupancyState.inExam;
+  }
+
+  static const _candidateNames = <String>[
+    'Zainab Musa',
+    'Ibrahim Bashir Yahaya',
+    'Maryam Bello',
+    'Sadiq Lawal',
+    'Fatima Musa',
+    'Umar Aliyu',
+    'Aisha Bello',
+    'Abubakar Sani',
+    'Khadija Abdullahi',
+    'Muhammad Kabir',
+    'Hauwa Ibrahim',
+    'Usman Garba',
+    'Safiya Ahmad',
+    'Yusuf Suleiman',
+    'Nafisa Ismail',
+    'Aminu Mohammed',
+    'Rukayya Adamu',
+    'Bashir Haruna',
+    'Halima Sani',
+    'Musa Abdullahi',
+    'Jamila Ibrahim',
+    'Abdullahi Umar',
+    'Asma'u Bello',
+    'Mustapha Garba',
+    'Rahma Yusuf',
+    'Nasir Ahmad',
+    'Zahra Mohammed',
+    'Aliyu Sani',
+    'Habiba Musa',
+    'Ibrahim Suleiman',
+    'Amina Abdullahi',
+    'Salisu Haruna',
+    'Nura Kabir',
+    'Fadila Umar',
+    'Murtala Ahmad',
+    'Sadiya Garba',
+    'Khalid Ibrahim',
+    'Bilal Musa',
+    'Hafsat Bello',
+    'Ismail Yusuf',
+    'Farida Sani',
+    'Mahmud Abdullahi',
+    'Aisha Kabir',
+    'Anas Mohammed',
+    'Maryam Sani',
+    'Hamza Bello',
+    'Zulaihat Umar',
+    'Abdulrahman Musa',
+  ];
 }
