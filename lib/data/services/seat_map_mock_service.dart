@@ -70,11 +70,13 @@ class SeatMapMockService {
     if (seat == 2 ||
         seat == 4 ||
         seat == 5 ||
+        seat == 8 ||
         seat == 11 ||
         seat == 15 ||
         seat == 22 ||
         seat == 26 ||
         seat == 28 ||
+        seat == 30 ||
         seat == 31 ||
         seat == 39 ||
         seat == 42 ||
