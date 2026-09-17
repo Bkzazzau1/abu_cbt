@@ -80,6 +80,21 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
     final candidate = portal?.candidate.value;
     if (currentExam == null || candidate == null) return;
 
+    final latestReview = reviewStore.latestForCandidate(
+      registrationNumber: candidate.registrationNumber,
+      examTitle: examTitle,
+    );
+    if (latestReview?.isRejected == true) {
+      setState(() => reviewRequest = latestReview);
+      Get.snackbar(
+        'Identity review rejected',
+        'This examination remains blocked. A rejected manual identity decision cannot be bypassed by repeated fingerprint attempts.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 6),
+      );
+      return;
+    }
+
     setState(() {
       scanning = true;
       result = null;
@@ -118,6 +133,20 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
     final currentResult = result;
     if (currentExam == null || candidate == null || currentResult == null) return;
     if (currentResult == FingerprintResult.matched) return;
+
+    final latestReview = reviewStore.latestForCandidate(
+      registrationNumber: candidate.registrationNumber,
+      examTitle: examTitle,
+    );
+    if (latestReview?.isRejected == true) {
+      setState(() => reviewRequest = latestReview);
+      Get.snackbar(
+        'Identity review rejected',
+        'A new review request cannot be created after rejection for this exam session.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
 
     setState(() => requestingReview = true);
     try {
@@ -351,7 +380,7 @@ class _FingerprintCard extends StatelessWidget {
         : pendingReview
         ? 'Invigilator identity review pending'
         : rejected
-        ? 'Manual identity review was not approved'
+        ? 'Manual identity review was not approved. Examination access is blocked.'
         : matched
         ? 'Fingerprint matched'
         : failed
@@ -500,7 +529,9 @@ class _FingerprintCard extends StatelessWidget {
           ],
           const SizedBox(height: 22),
           FilledButton.icon(
-            onPressed: scanning || openingExam || matched || approved ? null : onScan,
+            onPressed: scanning || openingExam || matched || approved || rejected
+                ? null
+                : onScan,
             icon: const Icon(Icons.fingerprint_rounded),
             label: Padding(
               padding: const EdgeInsets.symmetric(vertical: 13),
@@ -513,7 +544,7 @@ class _FingerprintCard extends StatelessWidget {
               ),
             ),
           ),
-          if ((failed || unavailable) && !pendingReview) ...[
+          if ((failed || unavailable) && !pendingReview && !rejected) ...[
             const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: requestingReview || scanning || openingExam
