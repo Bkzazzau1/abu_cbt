@@ -246,10 +246,11 @@ class CandidateCheckInController extends GetxController {
   void authorize() {
     final current = record.value;
     if (current == null) return;
-    if (!current.canAuthorize) {
+    if (current.status != CandidateCheckInStatus.verified ||
+        !current.canAuthorize) {
       Get.snackbar(
         'Verification incomplete',
-        'Identity, assigned seat, and exam allocation must all be verified.',
+        'Complete the Verified stage, including identity, assigned seat, and exam allocation, before authorization.',
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
