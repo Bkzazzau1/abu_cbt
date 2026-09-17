@@ -12,7 +12,6 @@ enum AttendanceState {
 enum IdentityVerificationState {
   pending,
   matched,
-  manualVerified,
   mismatch,
   manualReview,
 }
@@ -30,6 +29,10 @@ class AttendanceRecord {
     this.biometricConfidence = 0,
     this.arrivalTimeLabel = '-',
     this.verificationNote = '',
+    this.manualIdentityVerified = false,
+    this.manualVerifiedBy = '',
+    this.manualVerificationAuditId = '',
+    this.manualVerifiedAt,
   });
 
   final String candidateName;
@@ -44,9 +47,17 @@ class AttendanceRecord {
   final String arrivalTimeLabel;
   final String verificationNote;
 
+  /// Audit metadata is separate from [identityState] so the existing
+  /// biometric state machine remains compatible while reports can distinguish
+  /// biometric matches from invigilator-approved manual verification.
+  final bool manualIdentityVerified;
+  final String manualVerifiedBy;
+  final String manualVerificationAuditId;
+  final DateTime? manualVerifiedAt;
+
   bool get identityVerified =>
       identityState == IdentityVerificationState.matched ||
-      identityState == IdentityVerificationState.manualVerified;
+      manualIdentityVerified;
 
   bool get needsAttention =>
       state == AttendanceState.issueFlagged ||
@@ -65,6 +76,10 @@ class AttendanceRecord {
     double? biometricConfidence,
     String? arrivalTimeLabel,
     String? verificationNote,
+    bool? manualIdentityVerified,
+    String? manualVerifiedBy,
+    String? manualVerificationAuditId,
+    DateTime? manualVerifiedAt,
   }) {
     return AttendanceRecord(
       candidateName: candidateName ?? this.candidateName,
@@ -78,6 +93,12 @@ class AttendanceRecord {
       biometricConfidence: biometricConfidence ?? this.biometricConfidence,
       arrivalTimeLabel: arrivalTimeLabel ?? this.arrivalTimeLabel,
       verificationNote: verificationNote ?? this.verificationNote,
+      manualIdentityVerified:
+          manualIdentityVerified ?? this.manualIdentityVerified,
+      manualVerifiedBy: manualVerifiedBy ?? this.manualVerifiedBy,
+      manualVerificationAuditId:
+          manualVerificationAuditId ?? this.manualVerificationAuditId,
+      manualVerifiedAt: manualVerifiedAt ?? this.manualVerifiedAt,
     );
   }
 }
