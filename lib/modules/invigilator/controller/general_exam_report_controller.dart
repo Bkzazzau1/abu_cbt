@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../data/models/attendance_models.dart';
 import '../../../data/models/candidate_action_models.dart';
+import '../../../data/models/exam_control_audit_models.dart';
 import '../../../data/models/incident_models.dart';
 import '../../../data/models/malpractice_models.dart';
 import '../../../data/models/manual_identity_verification_models.dart';
@@ -47,6 +48,7 @@ class GeneralExamReportController extends GetxController {
       await _attendanceStore.ensureLoaded();
       await _invigilatorStore.ensureLoaded();
       _reportingStore.ensureSeeded();
+      _identityStore.ensureSeeded();
       final exams = examOptions;
       if (selectedExam.value.isEmpty && exams.isNotEmpty) {
         selectedExam.value = exams.first;
@@ -74,6 +76,11 @@ class GeneralExamReportController extends GetxController {
     exams.addAll(
       _reportingStore.malpracticeReports
           .map((report) => report.examTitle)
+          .where((title) => title.trim().isNotEmpty),
+    );
+    exams.addAll(
+      _reportingStore.examControlEvents
+          .map((event) => event.examTitle)
           .where((title) => title.trim().isNotEmpty),
     );
     exams.addAll(
@@ -175,6 +182,12 @@ class GeneralExamReportController extends GetxController {
             _hallIncluded(report.hallName);
       }).toList();
 
+  List<ExamControlAuditRecord> get examControlEvents =>
+      _reportingStore.examControlEvents.where((event) {
+        return event.examTitle == selectedExam.value &&
+            _hallIncluded(event.hallName);
+      }).toList();
+
   List<ManualIdentityVerificationRequest> get identityReviews =>
       _identityStore.requests.where((request) {
         return request.examTitle == selectedExam.value &&
@@ -218,6 +231,16 @@ class GeneralExamReportController extends GetxController {
       .where((event) => event.registrationNumber == registrationNumber)
       .length;
 
+  int controlCountFor(String registrationNumber) => examControlEvents
+      .where((event) => event.registrationNumber == registrationNumber)
+      .length;
+
+  List<ExamControlAuditRecord> controlEventsFor(String registrationNumber) =>
+      examControlEvents
+          .where((event) => event.registrationNumber == registrationNumber)
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
   List<ManualIdentityVerificationRequest> identityReviewsFor(
     String registrationNumber,
   ) =>
@@ -225,20 +248,32 @@ class GeneralExamReportController extends GetxController {
           .where((request) => request.registrationNumber == registrationNumber)
           .toList();
 
+  /// Kept under the original getter name for UI compatibility. The Candidate
+  /// Audit table uses this as the total number of related audit records, not a
+  /// risk score.
   int attentionCountFor(String registrationNumber) {
     return incidentCountFor(registrationNumber) +
         malpracticeCountFor(registrationNumber) +
         technicalCountFor(registrationNumber) +
-        identityReviewsFor(registrationNumber)
-            .where((request) => request.isPending || request.isRejected)
-            .length;
+        transferCountFor(registrationNumber) +
+        controlCountFor(registrationNumber) +
+        identityReviewsFor(registrationNumber).length;
   }
+
+  int get forceSubmittedCount => examControlEvents
+      .where((event) => event.type == ExamControlAuditType.forceSubmitted)
+      .length;
+
+  int get lateEntryCount => examControlEvents
+      .where((event) => event.type == ExamControlAuditType.lateEntryAllowed)
+      .length;
 
   int get totalOperationalEvents => incidents.length +
       malpracticeReports.length +
       technicalReports.length +
       workstationTransfers.length +
-      identityReviews.length;
+      identityReviews.length +
+      examControlEvents.length;
 
   List<AttendanceRecord> candidatesForHall(String hall) =>
       _attendanceStore.records.where((record) {
