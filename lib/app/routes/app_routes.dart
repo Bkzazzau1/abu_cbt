@@ -21,6 +21,7 @@ abstract class Routes {
   static const candidateActionPanel = '/candidate-action-panel';
 
   static const attendanceRegister = '/attendance-register';
+  static const generalExamReport = '/general-exam-report';
   static const manualIdentityReview = '/manual-identity-review';
   static const seatMap = '/seat-map';
   static const workstationAllocation = '/workstation-allocation';
