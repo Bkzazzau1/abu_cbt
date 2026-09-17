@@ -7,6 +7,7 @@ import '../../../data/models/workstation_presence_models.dart';
 import '../../../data/models/workstation_models.dart';
 import '../../../data/services/center_exam_service.dart';
 import '../../../data/services/hall_network_risk_service.dart';
+import '../../../data/services/invigilator_demo_store.dart';
 import '../../../data/services/workstation_presence_ws_service.dart';
 import '../../../data/services/workstation_service.dart';
 import '../../portal/controller/center_exam_portal_controller.dart';
@@ -36,12 +37,45 @@ class CenterLoginController extends GetxController {
         return;
       }
 
+      final liveExam = _findLiveExam(result);
+      WorkstationRegistration? registration;
+
+      if (liveExam != null) {
+        registration = await WorkstationService.touchLastSeen();
+        final assignmentStore = Get.isRegistered<InvigilatorDemoStore>()
+            ? Get.find<InvigilatorDemoStore>()
+            : Get.put(InvigilatorDemoStore(), permanent: true);
+
+        final decision = await assignmentStore.claimWorkstationOnLogin(
+          registrationNumber: result.candidate.registrationNumber,
+          candidateName: result.candidate.fullName,
+          examTitle: '${liveExam.courseCode} - ${liveExam.courseTitle}',
+          hallName: registration.hallName,
+          seatNumber: registration.seatNumber,
+          workstationId: registration.workstationId,
+        );
+
+        if (!decision.allowed) {
+          Get.snackbar(
+            'Workstation access blocked',
+            decision.message,
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 6),
+          );
+          return;
+        }
+      }
+
       final portal = Get.isRegistered<CenterExamPortalController>()
           ? Get.find<CenterExamPortalController>()
           : Get.put(CenterExamPortalController());
 
       portal.loadCandidateSession(result);
-      await _emitLoginPresence(result);
+      await _emitLoginPresence(
+        result,
+        registration: registration,
+        liveExam: liveExam,
+      );
 
       Get.offAllNamed(Routes.centerPortal);
     } finally {
@@ -49,32 +83,35 @@ class CenterLoginController extends GetxController {
     }
   }
 
-  Future<void> _emitLoginPresence(CenterLoginResult result) async {
+  CenterExam? _findLiveExam(CenterLoginResult result) {
+    for (final item in result.exams) {
+      if (item.status == CenterExamStatus.dueNow) return item;
+    }
+    return null;
+  }
+
+  Future<void> _emitLoginPresence(
+    CenterLoginResult result, {
+    WorkstationRegistration? registration,
+    CenterExam? liveExam,
+  }) async {
     try {
-      final registration =
-          await WorkstationService.ensureAssignmentFromAttendance(
-            candidateRegistrationNumber: result.candidate.registrationNumber,
-          );
-      if (registration.workstationId.trim().isEmpty) return;
+      final currentRegistration =
+          registration ?? await WorkstationService.touchLastSeen();
+      if (currentRegistration.workstationId.trim().isEmpty) return;
 
-      CenterExam? liveExam;
-      for (final item in result.exams) {
-        if (item.status == CenterExamStatus.dueNow) {
-          liveExam = item;
-          break;
-        }
-      }
-
+      final currentLiveExam = liveExam ?? _findLiveExam(result);
       final wsService = Get.isRegistered<WorkstationPresenceWsService>()
           ? Get.find<WorkstationPresenceWsService>()
           : Get.put(WorkstationPresenceWsService());
 
-      final isApproved = registration.status == WorkstationStatus.whitelisted;
+      final isApproved =
+          currentRegistration.status == WorkstationStatus.whitelisted;
       final isNewDevice = !await WorkstationService.hasSubmissionHistory(
-        registration.workstationId,
+        currentRegistration.workstationId,
       );
       final ipAssessment = await HallNetworkRiskService.assess(
-        hallName: registration.hallName,
+        hallName: currentRegistration.hallName,
       );
       final reasons = <String>[];
       if (!isApproved) {
@@ -113,19 +150,19 @@ class CenterLoginController extends GetxController {
       await wsService.connectWorkstation();
       wsService.sendHeartbeat(
         WorkstationPresenceRecord(
-          workstationId: registration.workstationId,
-          centerName: registration.centerName.isEmpty
+          workstationId: currentRegistration.workstationId,
+          centerName: currentRegistration.centerName.isEmpty
               ? 'ABU'
-              : registration.centerName,
-          hallName: registration.hallName,
-          seatNumber: registration.seatNumber,
+              : currentRegistration.centerName,
+          hallName: currentRegistration.hallName,
+          seatNumber: currentRegistration.seatNumber,
           registrationNumber: result.candidate.registrationNumber,
           candidateName: result.candidate.fullName,
-          examTitle: liveExam == null
+          examTitle: currentLiveExam == null
               ? ''
-              : '${liveExam.courseCode} - ${liveExam.courseTitle}',
+              : '${currentLiveExam.courseCode} - ${currentLiveExam.courseTitle}',
           usageState: WorkstationUsageState.candidateLoggedIn,
-          workstationStatus: registration.status,
+          workstationStatus: currentRegistration.status,
           eventAtIso: DateTime.now().toIso8601String(),
           workstationApproved: isApproved,
           riskFlagged: reasons.isNotEmpty,
@@ -139,7 +176,8 @@ class CenterLoginController extends GetxController {
         ),
       );
     } catch (_) {
-      // WebSocket heartbeat should never block candidate login.
+      // Presence reporting should never bypass or undo a successful local
+      // workstation assignment decision.
     }
   }
 }
