@@ -27,6 +27,7 @@ class MalpracticeReportModel {
     required this.severity,
     required this.description,
     required this.actionTaken,
+    this.evidenceNote = '',
     this.reportedBy = '',
     required this.reportedAtIso,
     this.escalated = false,
@@ -47,6 +48,7 @@ class MalpracticeReportModel {
   final MalpracticeSeverity severity;
   final String description;
   final String actionTaken;
+  final String evidenceNote;
   final String reportedBy;
   final String reportedAtIso;
   final bool escalated;
@@ -56,6 +58,7 @@ class MalpracticeReportModel {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'workstationId': workstationId,
       'centerName': centerName,
       'hallName': hallName,
@@ -67,6 +70,7 @@ class MalpracticeReportModel {
       'severity': severity.name,
       'description': description,
       'actionTaken': actionTaken,
+      'evidenceNote': evidenceNote,
       'reportedBy': reportedBy,
       'reportedAtIso': reportedAtIso,
     };
@@ -92,6 +96,7 @@ class MalpracticeReportModel {
       ),
       description: (json['description'] ?? '').toString(),
       actionTaken: (json['actionTaken'] ?? '').toString(),
+      evidenceNote: (json['evidenceNote'] ?? '').toString(),
       reportedBy: (json['reportedBy'] ?? '').toString(),
       reportedAtIso: (json['reportedAtIso'] ?? '').toString(),
       escalated: json['escalated'] == true,
