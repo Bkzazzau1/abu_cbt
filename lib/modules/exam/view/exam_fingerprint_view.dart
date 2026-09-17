@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../data/models/attendance_models.dart';
 import '../../../data/models/center_exam_models.dart';
 import '../../../data/models/manual_identity_verification_models.dart';
+import '../../../data/services/attendance_demo_store.dart';
 import '../../../data/services/manual_identity_verification_store.dart';
 import '../../../data/services/workstation_service.dart';
 import '../../auth/fingerprint_reader.dart';
@@ -122,6 +124,7 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
       if (pending != null) {
         reviewStore.resolveByFingerprint(requestId: pending.id);
       }
+      await _markFingerprintVerified(candidate.registrationNumber);
       await _openExam(currentExam);
     }
   }
@@ -172,6 +175,10 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
         failureReason: failureReason,
         fingerprintAttempts: fingerprintAttempts,
       );
+      await _markIdentityReviewPending(
+        candidate.registrationNumber,
+        request.id,
+      );
 
       if (!mounted) return;
       setState(() => reviewRequest = request);
@@ -184,6 +191,49 @@ class _ExamFingerprintViewState extends State<ExamFingerprintView> {
     } finally {
       if (mounted) setState(() => requestingReview = false);
     }
+  }
+
+  Future<AttendanceDemoStore> _attendanceStore() async {
+    final store = Get.isRegistered<AttendanceDemoStore>()
+        ? Get.find<AttendanceDemoStore>()
+        : Get.put(AttendanceDemoStore(), permanent: true);
+    await store.ensureLoaded();
+    return store;
+  }
+
+  Future<void> _markIdentityReviewPending(
+    String registrationNumber,
+    String auditId,
+  ) async {
+    final store = await _attendanceStore();
+    final current = store.findByRegistration(registrationNumber);
+    if (current == null) return;
+    store.updateRecord(
+      current.copyWith(
+        state: AttendanceState.issueFlagged,
+        identityState: IdentityVerificationState.manualReview,
+        verificationNote:
+            'Fingerprint authentication could not be completed. Manual identity review pending. Audit ID: $auditId',
+      ),
+    );
+  }
+
+  Future<void> _markFingerprintVerified(String registrationNumber) async {
+    final store = await _attendanceStore();
+    final current = store.findByRegistration(registrationNumber);
+    if (current == null) return;
+    store.updateRecord(
+      current.copyWith(
+        state: current.state == AttendanceState.issueFlagged
+            ? AttendanceState.checkedIn
+            : current.state,
+        identityState: IdentityVerificationState.matched,
+        biometricConfidence: current.biometricConfidence > 0
+            ? current.biometricConfidence
+            : 96,
+        verificationNote: 'Fingerprint authentication passed at exam entry.',
+      ),
+    );
   }
 
   void _syncReviewStatus() {
